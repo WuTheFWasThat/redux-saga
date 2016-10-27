@@ -52,13 +52,6 @@ type Unsubscribe = () => void;
 type Subscribe<T> = (cb: (input: T) => void) => Unsubscribe;
 
 
-export function runSaga<S, SA, DA>(iterator: SagaIterator, io: {
-  subscribe: Subscribe<SA>;
-  dispatch(input: DA): any;
-  getState(): S;
-}, monitor?: Monitor): Task;
-
-
 export const CANCEL: string;
 
 export const END: {type: string};

@@ -1,7 +1,6 @@
 import middleware from './internal/middleware'
 export default middleware
 
-export { runSaga } from './internal/runSaga'
 export { END, eventChannel, channel } from './internal/channel'
 export { buffers } from './internal/buffers'
 export { delay, CANCEL } from './internal/utils'

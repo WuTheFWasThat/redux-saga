@@ -1,12 +1,5 @@
 # API Reference
 
-* [`Middleware API`](#middleware-api)
-  * [`createSagaMiddleware(options)`](#createsagamiddlewareoptions)
-  * [`middleware.run(saga, ...args)`](#middlewarerunsaga-args)
-* [`Saga Helpers`](#saga-helpers)
-  * [`takeEvery(pattern, saga, ...args)`](#takeeverypattern-saga-args)
-  * [`takeLatest(pattern, saga, ..args)`](#takelatestpattern-saga-args)
-  * [`throttle(ms, pattern, saga, ..args)`](#throttlems-pattern-saga-args)
 * [`Effect creators`](#effect-creators)
   * [`take(channel)`](#takechannel)
   * [`call(fn, ...args)`](#callfn-args)
@@ -30,82 +23,11 @@
   * [`Channel`](#channel)
   * [`Buffer`](#buffer)
   * [`SagaMonitor`](#sagamonitor)
-* [`External API`](#external-api)
-  * [`runSaga(iterator, options)`](#runsagaiterator-options)
 * [`Utils`](#utils)
   * [`channel([buffer])`](#channelbuffer)
   * [`eventChannel(subscribe, [buffer], matcher)`](#eventchannelsubscribe-buffer-matcher)
   * [`buffers`](#buffers)
   * [`delay(ms, [val])`](#delayms-val)
-
-## Middleware API
-
-### `createSagaMiddleware(options)`
-
-Creates a Redux middleware and connects the Sagas to the Redux Store
-
-- `options: Object` - A list of options to pass to the middleware. Currently supported options are:
-
-  - `sagaMonitor` : [SagaMonitor](#sagamonitor) - If a Saga Monitor is provided, the middleware will deliver monitoring events to the monitor.
-
-  - `logger` : Function -  defines a custom logger for the middleware. By default, the middleware logs all errors and
-warnings to the console. This option tells the middleware to send errors/warnings to the provided logger instead. The logger is called with the params `(level, ...args)`. The 1st indicates the level of the log ('info', 'warning' or 'error'). The rest corresponds to the following arguments (You can use `args.join(' ') to concatenate all args into a single StringS`).
-
-  - `onError` : Function - if provided, the middleware will call it with uncaught errors from Sagas. useful for sending uncaught exceptions to error tracking services.
-
-#### Example
-
-Below we will create a function `configureStore` which will enhance the Store with a new method `runSaga`. Then in our main module, we will use the method to start the root Saga of the application.
-
-**configureStore.js**
-```javascript
-import createSagaMiddleware from 'redux-saga'
-import reducer from './path/to/reducer'
-
-export default function configureStore(initialState) {
-  // Note: passing middleware as the last argument to createStore requires redux@>=3.1.0
-  const sagaMiddleware = createSagaMiddleware()
-  return {
-    ...createStore(reducer, initialState, applyMiddleware(/* other middleware, */sagaMiddleware)),
-    runSaga: sagaMiddleware.run
-  }
-}
-```
-
-**main.js**
-```javascript
-import configureStore from './configureStore'
-import rootSaga from './sagas'
-// ... other imports
-
-const store = configureStore()
-store.runSaga(rootSaga)
-```
-
-#### Notes
-
-See below for more information on the `sagaMiddleware.run` method.
-
-### `middleware.run(saga, ...args)`
-
-Dynamically run `saga`. Can be used to run Sagas **only after** the `applyMiddleware` phase.
-
-- `saga: Function`: a Generator function
-- `args: Array<any>`: arguments to be provided to `saga`
-
-The method returns a [Task descriptor](#task-descriptor).
-
-#### Notes
-
-`saga` must be a function which returns a [Generator Object](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Generator). The middleware will then iterate over the Generator and execute all yielded Effects.
-
-`saga` may also start other sagas using the various Effects provided by the library. The iteration process process described below is also applied to all child sagas.
-
-In the first iteration, the middleware invokes the `next()` method to retrieve the next Effect. The middleware then executes the yielded Effect as specified by the Effects API below. Meanwhile, the Generator will be suspended until the effect execution terminates. Upon receiving the result of the execution, the middleware calls `next(result)` on the Generator passing it the retrieved result as an argument. This process is repeated until the Generator terminates normally or by throwing some error.
-
-If the execution results in an error (as specified by each Effect creator) then the `throw(error)` method of the Generator is called instead. If the Generator function defines a `try/catch` surrounding the current yield instruction, then the `catch` block will be invoked by the underlying Generator runtime. The runtime will also invoke any corresponding finally block.
-
-In the case a Saga is cancelled (either manually or using the provided Effects), the middleware will invoke `return()` method of the Generator. This will cause the Generator to skip directly to the finally block.
 
 ## Effect creators
 
@@ -483,7 +405,7 @@ When running Effects in parallel, the middleware suspends the Generator until on
 
 ### Task
 
-The Task interface specifies the result of running a Saga using `fork`, `middleware.run` or `runSaga`.
+The Task interface specifies the result of running a Saga using `fork`.
 
 <table id="task-descriptor">
   <tr>
@@ -600,48 +522,6 @@ Below the signature for each method
 
     - `effectId` : Number - The ID of the yielded effect
 
-
-## External API
-------------------------
-
-### `runSaga(iterator, options)`
-
-Allows starting sagas outside the Redux middleware environment. Useful if you want to
-connect a Saga to external input/output, other than store actions.
-
-`runSaga` returns a Task object. Just like the one returned from a `fork` effect.
-
-
-- `iterator: {next, throw}` - an Iterator object, Typically created by invoking a Generator function
-
-- `options: Object` - currently supported options are:
-
-  - `subscribe(callback): Function` - A function which accepts a callback and returns an `unsubscribe` function
-
-    - `callback(input): Function` - callback(provided by runSaga) used to subscribe to input events. `subscribe` must support registering multiple subscriptions.
-      - `input: any` - argument passed by `subscribe` to `callback` (see Notes below)
-
-  - `dispatch(output): Function` - used to fulfill `put` effects.
-    - `output: any` -  argument provided by the Saga to the `put` Effect (see Notes below).
-
-  - `getState(): Function` - used to fulfill `select` and `getState` effects
-
-  - `sagaMonitor` : [SagaMonitor](#sagamonitor) - see docs for [`createSagaMiddleware(options)`](#createsagamiddlewareoptions)
-
-  - `logger` : `Function` - see docs for [`createSagaMiddleware(options)`](#createsagamiddlewareoptions)
-
-#### Notes
-
-The `{subscribe, dispatch}` is used to fulfill `take` and `put` Effects. This defines the Input/Output
-interface of the Saga.
-
-`subscribe` is used to fulfill `take(PATTERN)` effects. It must call `callback` every time it
-has an input to dispatch (e.g. on every mouse click if the Saga is connected to DOM click events).
-Each time `subscribe` emits an input to its callbacks, if the Saga is blocked on a `take` effect, and
-if the take pattern matches the currently incoming input, the Saga is resumed with that input.
-
-`dispatch` is used to fulfill `put` effects. Each time the Saga emits a `yield put(output)`, `dispatch`
-is invoked with output.
 
 ## Utils
 
