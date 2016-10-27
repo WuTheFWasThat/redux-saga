@@ -9,9 +9,6 @@
   * [`throttle(ms, pattern, saga, ..args)`](#throttlems-pattern-saga-args)
 * [`Effect creators`](#effect-creators)
   * [`take(channel)`](#takechannel)
-  * [`put(action)`](#putaction)
-  * [`put.sync(action)`](#putsyncaction)
-  * [`put(channel, action)`](#putchannel-action)
   * [`call(fn, ...args)`](#callfn-args)
   * [`call([context, fn], ...args)`](#callcontext-fn-args)
   * [`apply(context, fn, args)`](#applycontext-fn-args)
@@ -23,8 +20,6 @@
   * [`spawn([context, fn], ...args)`](#spawncontext-fn-args)
   * [`join(task)`](#jointask)
   * [`cancel(task)`](#canceltask)
-  * [`select(selector, ...args)`](#selectselector-args)
-  * [`actionChannel(pattern, [buffer])`](#actionchannelpattern-buffer)
   * [`flush(channel)`](#flushchannel)
   * [`cancelled()`](#cancelled)
 * [`Effect combinators`](#effect-combinators)
@@ -112,164 +107,6 @@ If the execution results in an error (as specified by each Effect creator) then 
 
 In the case a Saga is cancelled (either manually or using the provided Effects), the middleware will invoke `return()` method of the Generator. This will cause the Generator to skip directly to the finally block.
 
-## Saga Helpers
-
-> Note: the following functions are helper functions built on top of the Effect creators
-below.
-
-### `takeEvery(pattern, saga, ...args)`
-
-Spawns a `saga` on each action dispatched to the Store that matches `pattern`.
-
-- `pattern: String | Array | Function` - for more information see docs for [`take(pattern)`](#takepattern)
-
-- `saga: Function` - a Generator function
-
-- `args: Array<any>` - arguments to be passed to the started task. `takeEvery` will add the incoming action to the argument list (i.e. the action will be the last argument provided to `saga`)
-
-#### Example
-
-In the following example, we create a simple task `fetchUser`. We use `takeEvery` to start a new `fetchUser` task on each dispatched `USER_REQUESTED` action:
-
-```javascript
-import { takeEvery } from `redux-saga`
-
-function* fetchUser(action) {
-  ...
-}
-
-function* watchFetchUser() {
-  yield takeEvery('USER_REQUESTED', fetchUser)
-}
-```
-
-#### Notes
-
-`takeEvery` is a high-level API built using `take` and `fork`. Here is how the helper is implemented:
-
-```javascript
-function* takeEvery(pattern, saga, ...args) {
-  const task = yield fork(function* () {
-    while (true) {
-      const action = yield take(pattern)
-      yield fork(saga, ...args.concat(action))
-    }
-  })
-  return task
-}
-```
-
-`takeEvery` allows concurrent actions to be handled. In the example above, when a `USER_REQUESTED`
-action is dispatched, a new `fetchUser` task is started even if a previous `fetchUser` is still pending
-(for example, the user clicks on a `Load User` button 2 consecutive times at a rapid rate, the 2nd
-click will dispatch a `USER_REQUESTED` action while the `fetchUser` fired on the first one hasn't yet terminated)
-
-`takeEvery` doesn't handle out of order responses from tasks. There is no guarantee that the tasks will
-termiate in the same order they were started. To handle out of order responses, you may consider `takeLatest`
-below.
-
-### `takeLatest(pattern, saga, ...args)`
-
-Spawns a `saga` on each action dispatched to the Store that matches `pattern`. And automatically cancels
-any previous `saga` task started previous if it's still running.
-
-Each time an action is dispatched to the store. And if this action matches `pattern`, `takeLatest`
-starts a new `saga` task in the background. If a `saga` task was started previously (on the last action dispatched
-before the actual action), and if this task is still running, the task will be cancelled.
-
-- `pattern: String | Array | Function` - for more information see docs for [`take(pattern)`](#takepattern)
-
-- `saga: Function` - a Generator function
-
-- `args: Array<any>` - arguments to be passed to the started task. `takeLatest` will add the
-incoming action to the argument list (i.e. the action will be the last argument provided to `saga`)
-
-#### Example
-
-In the following example, we create a simple task `fetchUser`. We use `takeLatest` to
-start a new `fetchUser` task on each dispatched `USER_REQUESTED` action. Since `takeLatest`
-cancels any pending task started previously, we ensure that if a user triggers multiple consecutive
-`USER_REQUESTED` actions rapidly, we'll only conclude with the latest action
-
-```javascript
-import { takeLatest } from `redux-saga`
-
-function* fetchUser(action) {
-  ...
-}
-
-function* watchLastFetchUser() {
-  yield takeLatest('USER_REQUESTED', fetchUser)
-}
-```
-
-#### Notes
-
-`takeLatest` is a high-level API built using `take` and `fork`. Here is how the helper is implemented
-
-```javascript
-function* takeLatest(pattern, saga, ...args) {
-  const task = yield fork(function* () {
-    let lastTask
-    while (true) {
-      const action = yield take(pattern)
-      if (lastTask)
-        yield cancel(lastTask) // cancel is no-op if the task has already terminated
-
-      lastTask = yield fork(saga, ...args.concat(action))
-    }
-  })
-  return task
-}
-```
-
-### `throttle(ms, pattern, saga, ...args)`
-
-Spawns a `saga` on an action dispatched to the Store that matches `pattern`. After spawning a task it's still accepting incoming actions into the underlaying `buffer`, keeping at most 1 (the most recent one), but in the same time holding up with spawning new task for `ms` miliseconds (hence it's name - `throttle`). Purpose of this is to ignore incoming actions for a given period of time while processing a task.
-
-- `ms: Number` - length of a time window in miliseconds during which actions will be ignored after the action starts processing
-
-- `pattern: String | Array | Function` - for more information see docs for [`take(pattern)`](#takepattern)
-
-- `saga: Function` - a Generator function
-
-- `args: Array<any>` - arguments to be passed to the started task. `throttle` will add the
-incoming action to the argument list (i.e. the action will be the last argument provided to `saga`)
-
-#### Example
-
-In the following example, we create a simple task `fetchAutocomplete`. We use `throttle` to
-start a new `fetchAutocomplete` task on dispatched `FETCH_AUTOCOMPLETE` action. However since `throttle` ignores consecutive `FETCH_AUTOCOMPLETE` for some time, we ensure that user won't flood our server with requests.
-
-```javascript
-import { throttle } from `redux-saga`
-
-function* fetchAutocomplete(action) {
-  const autocompleteProposals = yield call(Api.fetchAutocomplete, action.text)
-  yield put({type: 'FETCHED_AUTOCOMPLETE_PROPOSALS', proposals: autocompleteProposals})
-}
-
-function* throttleAutocomplete() {
-  yield throttle(1000, 'FETCH_AUTOCOMPLETE', fetchAutocomplete)
-}
-```
-
-#### Notes
-
-`throttle` is a high-level API built using `take`, `fork` and `actionChannel`. Here is how the helper is implemented
-
-```javascript
-function* throttle(ms, pattern, task, ...args) {
-  const throttleChannel = yield actionChannel(pattern, buffers.sliding(1))
-
-  while (true) {
-    const action = yield take(throttleChannel)
-    yield fork(task, ...args, action)
-    yield call(delay, ms)
-  }
-}
-```
-
 ## Effect creators
 
 > Notes:
@@ -281,30 +118,6 @@ function* throttle(ms, pattern, task, ...args) {
 ### `take(channel)`
 
 Creates an Effect description that instructs the middleware to wait for a specified message from the provided Channel. If the channel is already closed, then the Generator will immediately terminate following the same process described above for `take(pattern)`.
-
-### `put(action)`
-
-Creates an Effect description that instructs the middleware to dispatch an action to the Store.
-This effect is non-blocking and any errors that are thrown downstream (e.g. in a reducer) will
-not bubble back into the saga.
-
-- `action: Object` - [see Redux `dispatch` documentation for complete info](http://redux.js.org/docs/api/Store.html#dispatch)
-
-### `put.sync(action)`
-
-Just like [`put`](#putaction) but the effect is blocking and will bubble up errors from downstream.
-
-- `action: Object` - [see Redux `dispatch` documentation for complete info](http://redux.js.org/docs/api/Store.html#dispatch)
-
-### `put(channel, action)`
-
-Creates an Effect description that instructs the middleware to put an action into the provided channel.
-
-- `channel: Channel` - a [`Channel`](#channel) Object.
-- `action: Object` - [see Redux `dispatch` documentation for complete info](http://redux.js.org/docs/api/Store.html#dispatch)
-
-This effect is blocking if the put is *not* buffered but immediately consumed by takers. If an error
-is thrown in any of these takers it will bubble back into the saga.
 
 ### `call(fn, ...args)`
 
@@ -552,32 +365,6 @@ export default function* rootSaga() {
 ```
 
 `checkout` can get the needed information directly by using `select(getCart)`. The Saga is coupled only with the `getCart` selector. If we have many Sagas (or React Components) that needs to access the `cart` slice, they will all be coupled to the same function `getCart`. And if we now change the state shape, we need only to update `getCart`.
-
-### `actionChannel(pattern, [buffer])`
-
-Creates an effect that instructs the middleware to queue the actions matching `pattern` using an event channel. Optionally, you can provide a buffer to control buffering of the queued actions.
-
-`pattern:` - see API for `take(pattern)`
-`buffer: Buffer` - a [Buffer](#buffer) object
-
-#### Example
-
-The following code creates channel to buffer all `USER_REQUEST` actions. Note that even the Saga maybe blocked
-on the `call` effect. All actions that come while it's blocked are automatically buffered. This causes the Saga
-to execute the API calls one at a time
-
-```javascript
-import { actionChannel, call } from 'redux-saga/effects'
-import api from '...'
-
-function* takeOneAtMost() {
-  const chan = yield actionChannel('USER_REQUEST')
-  while (true) {
-    const {payload} = yield take(chan)
-    yield call(api.getUser, payload)
-  }
-}
-```
 
 ### `flush(channel)`
 

@@ -3,7 +3,7 @@
 import test from 'tape'
 import { createStore, applyMiddleware } from 'redux'
 import sagaMiddleware from '../src'
-import { take, put, fork, join, call, race, cancel, actionChannel } from '../src/effects'
+import { take, put, fork, join, call, race, cancel } from '../src/effects'
 import {channel, buffers, END} from '../src'
 
 test('action channel', assert => {

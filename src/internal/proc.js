@@ -1,8 +1,7 @@
 import { noop, kTrue, is, log as _log, check, deferred, autoInc, remove, TASK, CANCEL, makeIterator } from './utils'
 import asap from './asap'
 import { asEffect } from './io'
-import { stdChannel as _stdChannel, eventChannel, isEnd } from './channel'
-import { buffers } from './buffers'
+import { stdChannel as _stdChannel, isEnd } from './channel'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -14,7 +13,6 @@ export const TASK_CANCEL = {toString() { return '@@redux-saga/TASK_CANCEL' }}
 
 const matchers = {
   wildcard  : () => kTrue,
-  default   : pattern => input => input.type === pattern,
   array     : patterns => input => patterns.some(p => p === input.type),
   predicate : predicate => input => predicate(input)
 }
@@ -387,7 +385,6 @@ export default function proc(
       : (is.notUndef(data = asEffect.fork(effect)))          ? runForkEffect(data, effectId, currCb)
       : (is.notUndef(data = asEffect.join(effect)))          ? runJoinEffect(data, currCb)
       : (is.notUndef(data = asEffect.cancel(effect)))        ? runCancelEffect(data, currCb)
-      : (is.notUndef(data = asEffect.actionChannel(effect))) ? runChannelEffect(data, currCb)
       : (is.notUndef(data = asEffect.flush(effect)))         ? runFlushEffect(data, currCb)
       : (is.notUndef(data = asEffect.cancelled(effect)))     ? runCancelledEffect(data, currCb)
       : /* anything else returned as is        */              currCb(effect)
@@ -577,12 +574,6 @@ export default function proc(
       }
       runEffect(effects[key], effectId, key, childCbs[key])
     })
-  }
-
-  function runChannelEffect({pattern, buffer}, cb) {
-    const match = matcher(pattern)
-    match.pattern = pattern
-    cb(eventChannel(subscribe, buffer || buffers.fixed(), match))
   }
 
   function runCancelledEffect(data, cb) {

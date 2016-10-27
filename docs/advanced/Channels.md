@@ -4,78 +4,14 @@ Until now we've used the `take` and `put` effects to communicate with the Redux 
 
 In this section, we'll see:
 
-- How to use the `yield actionChannel` Effect to buffer specific actions from the Store.
-
 - How to use the `eventChannel` factory function to connect `take` Effects to external event sources.
 
 - How to create a channel using the generic `channel` factory function and use it in `take`/`put` Effects to
 communicate between two Sagas.
 
-## Using the `actionChannel` Effect
-
-Let's review the canonical example:
-
-```javascript
-import { take, fork, ... } from 'redux-saga/effects'
-
-function* watchRequests() {
-  while (true) {
-    const {payload} = yield take('REQUEST')
-    yield fork(handleRequest, payload)
-  }
-}
-
-function* handleRequest(payload) { ... }
-```
-
-The above example illustrates the typical *watch-and-fork* pattern. The `watchRequests` saga is using `fork` to avoid blocking and thus not missing any action from the store. A `handleRequest` task is created on each `REQUEST` action. So if there are many actions fired at a rapid race there can be many `handleRequest` tasks executing concurrently.
-
-Imagine now that our requirement is as follows: we want to process `REQUEST` serially. If we have at any moment four actions, we want to handle the first `REQUEST` action, then only after finishing this action we process the second action and so on...
-
-So we want to *queue* all non-processed actions, and once we're done with processing the current request, we get the next message from the queue.
-
-Redux-Saga provides a little helper Effect `actionChannel`, which can handle this for us. Let's see how we can rewrite the previous example with it:
-
-```javascript
-import { take, actionChannel, call, ... } from 'redux-saga/effects'
-
-function* watchRequests() {
-  // 1- Create a channel for request actions
-  const requestChan = yield actionChannel('REQUEST')
-  while (true) {
-    // 2- take from the channel
-    const {payload} = yield take(requestChan)
-    // 3- Note that we're using a blocking call
-    yield call(handleRequest, payload)
-  }
-}
-
-function* handleRequest(payload) { ... }
-```
-
-The first thing is to create the action channel. We use `yield actionChannel(pattern)` where pattern is interpreted using the same rules we mentioned previously with `take(pattern)`. The difference between the 2 forms is that `actionChannel` **can buffer incoming messages** if the Saga is not yet ready to take them (e.g. blocked on an API call).
-
-Next is the `yield take(requestChan)`. Besides usage with a `pattern` to take specific actions from the Redux Store, `take` can also be used with channels (above we created a channel object from specific Redux actions). The `take` will block the Saga until a message is available on the channel. The take may also resume immediately if there is a message stored in the underlying buffer.
-
-The important thing to note is how we're using a blocking `call`. The Saga will remain blocked until `call(handleRequest)` returns. But meanwhile, if other `REQUEST` actions are dispatched while the Saga is still blocked, they will queued internally by `requestChan`. When the Saga resumes from `call(handleRequest)` and executes the next `yield take(requestChan)`, the take will resolve with the queued message.
-
-By default, `actionChannel` buffers all incoming messages without limit. If you want a more control over the buffering, you can supply a Buffer argument to the effect creator. Redux-Saga provides some common buffers (none, dropping, sliding) but you can also supply your own buffer implementation. [See API docs](../api#buffers) for more details.
-
-For example if you want to handle only the most recent five items you can use:
-
-```javascript
-import { buffers } from 'redux-saga'
-import { actionChannel } from 'redux-saga/effects'
-
-function* watchRequests() {
-  const requestChan = yield actionChannel('REQUEST', buffers.sliding(5))
-  ...
-}
-```
-
 ## Using the `eventChannel` factory to connect to external events
 
-Like `actionChannel` (Effect), `eventChannel` (a factory function, not an Effect) creates a Channel for events but from event sources other than the Redux Store.
+`eventChannel` (a factory function, not an Effect) creates a Channel for events but from event sources other than the Redux Store.
 
 This simple example creates a Channel from an interval:
 
@@ -120,7 +56,7 @@ function countdown(seconds) { ... }
 
 export function* saga() {
   const chan = yield call(countdown, value)
-  try {    
+  try {
     while (true) {
       // take(END) will cause the saga to terminate by jumping to the finally block
       let seconds = yield take(chan)
@@ -147,7 +83,7 @@ function countdown(seconds) { ... }
 
 export function* saga() {
   const chan = yield call(countdown, value)
-  try {    
+  try {
     while (true) {
       let seconds = yield take(chan)
       console.log(`countdown: ${seconds}`)
@@ -156,7 +92,7 @@ export function* saga() {
     if (yield cancelled()) {
       chan.close()
       console.log('countdown cancelled')
-    }    
+    }
   }
 }
 ```
@@ -236,9 +172,9 @@ function* watchRequests() {
 function* handleRequest(payload) { ... }
 ```
 
-We saw that the watch-and-fork pattern allows handling multiple requests simultaneously, without limit on the number of worker tasks executing concurrently. Then, we used the `actionChannel` effect to limit the concurrency to one task at a time.
+We saw that the watch-and-fork pattern allows handling multiple requests simultaneously, without limit on the number of worker tasks executing concurrently.
 
-So let's say that our requirement is to have a maximum of three tasks executing at the same time. When we get a request and there are less than three tasks executing, we process the request immediately, otherwise we queue the task and wait for one of the three *slots* to become free.
+Let's say that our requirement is to have a maximum of three tasks executing at the same time. When we get a request and there are less than three tasks executing, we process the request immediately, otherwise we queue the task and wait for one of the three *slots* to become free.
 
 Below is an example of a solution using channels:
 

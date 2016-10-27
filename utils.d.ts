@@ -1,7 +1,6 @@
 import {
-  Effect, TakeEffectDescriptor, PutEffectDescriptor,
-  RaceEffectDescriptor, CallEffectDescriptor, ForkEffectDescriptor,
-  SelectEffectDescriptor, ActionChannelEffectDescriptor
+  Effect, TakeEffectDescriptor,
+  RaceEffectDescriptor, CallEffectDescriptor, ForkEffectDescriptor
 } from "./effects";
 import {Predicate, Task} from "./types";
 
@@ -46,14 +45,11 @@ export function createMockTask(): MockTask;
 
 export const asEffect: {
   take<T>(effect: Effect): TakeEffectDescriptor<T>;
-  put<T>(effect: Effect): PutEffectDescriptor<T>;
   race(effect: Effect): RaceEffectDescriptor;
   call(effect: Effect): CallEffectDescriptor;
   cps(effect: Effect): CallEffectDescriptor;
   fork(effect: Effect): ForkEffectDescriptor;
   join(effect: Effect): Task;
   cancel(effect: Effect): Task;
-  select(effect: Effect): SelectEffectDescriptor;
-  actionChannel<T>(effect: Effect): ActionChannelEffectDescriptor<T>;
   cancelled(effect: Effect): {};
 };

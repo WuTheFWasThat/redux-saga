@@ -126,19 +126,6 @@ interface CancelEffect {
 export function cancel(task: Task): CancelEffect;
 
 
-interface ActionChannelEffectDescriptor<T> {
-  pattern: Pattern<T>;
-  buffer: Buffer<T>;
-}
-
-interface ActionChannelEffect<T> {
-  ACTION_CHANNEL: ActionChannelEffectDescriptor<T>;
-}
-
-export function actionChannel<T>(pattern: Pattern<T>,
-                              buffer?: Buffer<T>): ActionChannelEffect<T>;
-
-
 interface CancelledEffect {
   CANCELLED: {};
 }
@@ -149,5 +136,4 @@ export function cancelled(): CancelledEffect;
 export type Effect =
   TakeEffect<any> |
   RaceEffect | CallEffect |
-  CpsEffect | ForkEffect | JoinEffect | CancelEffect  |
-  ActionChannelEffect<any> | CancelledEffect;
+  CpsEffect | ForkEffect | JoinEffect | CancelEffect  | CancelledEffect;

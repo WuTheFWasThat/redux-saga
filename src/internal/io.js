@@ -8,7 +8,6 @@ const CPS     = 'CPS'
 const FORK    = 'FORK'
 const JOIN    = 'JOIN'
 const CANCEL  = 'CANCEL'
-const ACTION_CHANNEL = 'ACTION_CHANNEL'
 const CANCELLED  = 'CANCELLED'
 const FLUSH  = 'FLUSH'
 
@@ -84,18 +83,6 @@ export function cancel(task) {
   return effect(CANCEL, task)
 }
 
-/**
-  channel(pattern, [buffer])    => creates an event channel for store actions
-**/
-export function actionChannel(pattern, buffer) {
-  check(pattern, is.notUndef, 'actionChannel(pattern,...): argument pattern is undefined')
-  if(arguments.length > 1) {
-    check(buffer, is.notUndef, 'actionChannel(pattern, buffer): argument buffer is undefined')
-    check(buffer, is.notUndef, `actionChannel(pattern, buffer): argument ${buffer} is not a valid buffer`)
-  }
-  return effect(ACTION_CHANNEL, {pattern, buffer})
-}
-
 export function cancelled() {
   return effect(CANCELLED, {})
 }
@@ -113,7 +100,6 @@ export const asEffect = {
   fork    : effect => effect && effect[IO] && effect[FORK],
   join    : effect => effect && effect[IO] && effect[JOIN],
   cancel  : effect => effect && effect[IO] && effect[CANCEL],
-  actionChannel : effect => effect && effect[IO] && effect[ACTION_CHANNEL],
   cancelled  : effect => effect && effect[IO] && effect[CANCELLED],
   flush  : effect => effect && effect[IO] && effect[FLUSH]
 }

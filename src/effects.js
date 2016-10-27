@@ -1,1 +1,1 @@
-export { take, put, race, call, apply, cps, fork, spawn, join, cancel, select, actionChannel, cancelled, flush } from './internal/io'
+export { take, race, call, apply, cps, fork, spawn, join, cancel, cancelled, flush } from './internal/io'
