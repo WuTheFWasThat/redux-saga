@@ -1,5 +1,5 @@
-import { is, check, remove, MATCH, internalErr} from './utils'
-import {buffers} from './buffers'
+import { is, check, remove, MATCH, internalErr } from './utils'
+import { buffers } from './buffers'
 
 const CHANNEL_END_TYPE = '@@redux-saga/CHANNEL_END'
 export const END = {type: CHANNEL_END_TYPE}

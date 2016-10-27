@@ -8,10 +8,7 @@
   * [`takeLatest(pattern, saga, ..args)`](#takelatestpattern-saga-args)
   * [`throttle(ms, pattern, saga, ..args)`](#throttlems-pattern-saga-args)
 * [`Effect creators`](#effect-creators)
-  * [`take(pattern)`](#takepattern)
-  * [`takem(pattern)`](#takempattern)
   * [`take(channel)`](#takechannel)
-  * [`takem(channel)`](#takemchannel)
   * [`put(action)`](#putaction)
   * [`put.sync(action)`](#putsyncaction)
   * [`put(channel, action)`](#putchannel-action)
@@ -281,34 +278,9 @@ function* throttle(ms, pattern, task, ...args) {
 > - The execution is performed by the middleware during the Iteration process described above.
 > - The middleware examines each Effect description and performs the appropriate action.
 
-### `take(pattern)`
-
-Creates an Effect description that instructs the middleware to wait for a specified action on the Store.
-The Generator is suspended until an action that matches `pattern` is dispatched.
-
-`pattern` is interpreted using the following rules:
-
-- If `take` is called with no arguments or `'*'` all dispatched actions are matched (e.g. `take()` will match all actions)
-
-- If it is a function, the action is matched if `pattern(action)` is true (e.g. `take(action => action.entities)` will match all actions having a (truthy) `entities`field.)
-
-- If it is a String, the action is matched if `action.type === pattern` (e.g. `take(INCREMENT_ASYNC)`
-
-- If it is an array, `action.type` is matched against all items in the array (e.g. `take([INCREMENT, DECREMENT])` will match either actions of type `INCREMENT` or `DECREMENT`).
-
-The middleware provides a special action `END`. If you dispatch the END action, then all Sagas blocked on a take Effect will be terminated regardless of the specified pattern. If the terminated Saga has still some forked tasks which are still running, it will wait for all the child tasks to terminate before terminating the Task.
-
-### `takem(pattern)`
-
-Same as `take(pattern)` but does not automatically terminate the Saga on an `END` action. Instead all Sagas blocked on a take Effect will get the `END` object.
-
 ### `take(channel)`
 
 Creates an Effect description that instructs the middleware to wait for a specified message from the provided Channel. If the channel is already closed, then the Generator will immediately terminate following the same process described above for `take(pattern)`.
-
-### `takem(channel)`
-
-Same as `take(channel)` but does not automatically terminate the Saga on an `END` action. Instead all takers are resumed with `END`
 
 ### `put(action)`
 

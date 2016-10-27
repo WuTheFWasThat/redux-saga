@@ -14,14 +14,8 @@ interface TakeEffect<T> {
   TAKE: TakeEffectDescriptor<T>;
 }
 
-export function take<T>(pattern: Pattern<T>): TakeEffect<T>;
-export function take<T>(channel: Channel<T>, 
+export function take<T>(channel: Channel<T>,
                         pattern?: Pattern<T>): TakeEffect<T>;
-
-export function takem<T>(pattern: Pattern<T>): TakeEffect<T>;
-export function takem<T>(channel: Channel<T>, 
-                         pattern?: Pattern<T>): TakeEffect<T>;
-
 
 interface PutEffectDescriptor<T> {
   action: T;
@@ -86,16 +80,16 @@ interface CallEffect {
 export const call: CallEffectFactory<CallEffect>;
 
 export function apply(context: any, fn: CallFunc0): CallEffect;
-export function apply<T1>(context: any, fn: CallFunc1<T1>, 
+export function apply<T1>(context: any, fn: CallFunc1<T1>,
                           args: [T1]): CallEffect;
 export function apply<T1, T2>(context: any, fn: CallFunc2<T1, T2>,
                           args: [T1, T2]): CallEffect;
 export function apply<T1, T2, T3>(context: any, fn: CallFunc3<T1, T2, T3>,
                           args: [T1, T2, T3]): CallEffect;
-export function apply<T1, T2, T3, T4>(context: any, 
+export function apply<T1, T2, T3, T4>(context: any,
                                       fn: CallFunc4<T1, T2, T3, T4>,
                           args: [T1, T2, T3, T4]): CallEffect;
-export function apply(context: any, fn: CallFuncRest, 
+export function apply(context: any, fn: CallFuncRest,
                       ...args: any[]): CallEffect;
 
 
@@ -106,7 +100,7 @@ interface CpsEffect {
 type CpsCallback = (error: any, result: any) => void;
 
 export function cps(fn: CallEffectArg<CallFunc1<CpsCallback>>): CpsEffect;
-export function cps<T1>(fn: CallEffectArg<CallFunc2<T1, CpsCallback>>, 
+export function cps<T1>(fn: CallEffectArg<CallFunc2<T1, CpsCallback>>,
                         arg1: T1): CpsEffect;
 export function cps<T1, T2>(fn: CallEffectArg<CallFunc3<T1, T2, CpsCallback>>,
                             arg1: T1, arg2: T2): CpsEffect;
@@ -155,11 +149,11 @@ interface SelectEffect {
 
 export function select(): SelectEffect;
 export function select<S>(selector: CallFunc1<S>): SelectEffect;
-export function select<S, T1>(selector: CallFunc2<S, T1>, 
+export function select<S, T1>(selector: CallFunc2<S, T1>,
                               arg1: T1): SelectEffect;
-export function select<S, T1, T2>(selector: CallFunc3<S, T1, T2>, 
+export function select<S, T1, T2>(selector: CallFunc3<S, T1, T2>,
                               arg1: T1, arg2: T2): SelectEffect;
-export function select<S, T1, T2, T3>(selector: CallFunc4<S, T1, T2, T3>, 
+export function select<S, T1, T2, T3>(selector: CallFunc4<S, T1, T2, T3>,
                               arg1: T1, arg2: T2, arg3: T3): SelectEffect;
 export function select<S, T1, T2, T3, T4>(
   selector: CallFunc5<S, T1, T2, T3, T4>,
@@ -186,9 +180,9 @@ interface CancelledEffect {
 export function cancelled(): CancelledEffect;
 
 
-export type Effect = 
+export type Effect =
   TakeEffect<any> |
-  PutEffect<any> |  
+  PutEffect<any> |
   RaceEffect | CallEffect |
   CpsEffect | ForkEffect | JoinEffect | CancelEffect | SelectEffect |
   ActionChannelEffect<any> | CancelledEffect;

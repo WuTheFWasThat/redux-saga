@@ -16,23 +16,14 @@ const FLUSH  = 'FLUSH'
 
 const effect = (type, payload) => ({[IO]: true, [type]: payload})
 
-export function take(patternOrChannel = '*') {
+export function take(channel = '*') {
   if (arguments.length) {
-    check(arguments[0], is.notUndef, 'take(patternOrChannel): patternOrChannel is undefined')
+    check(arguments[0], is.notUndef, 'take(channel): channel is undefined')
   }
-  if (is.pattern(patternOrChannel)) {
-    return effect(TAKE, { pattern: patternOrChannel })
+  if (is.channel(channel)) {
+    return effect(TAKE, { channel })
   }
-  if (is.channel(patternOrChannel)) {
-    return effect(TAKE, { channel: patternOrChannel })
-  }
-  throw new Error(`take(patternOrChannel): argument ${String(patternOrChannel)} is not valid channel or a valid pattern`)
-}
-
-export function takem(...args) {
-  const eff = take(...args)
-  eff[TAKE].maybe = true
-  return eff
+  throw new Error(`take(channel): argument ${String(channel)} is not valid channel or a valid pattern`)
 }
 
 export function put(channel, action) {
