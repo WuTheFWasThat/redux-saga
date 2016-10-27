@@ -1,5 +1,4 @@
-import {Action} from "redux";
-import {Channel, Task, Buffer, Predicate} from "./types";
+import { Channel, Task, Predicate } from './types';
 
 type Pattern<T> = string | string[] | Predicate<T>;
 
@@ -71,12 +70,12 @@ export function apply(context: any, fn: CallFunc0): CallEffect;
 export function apply<T1>(context: any, fn: CallFunc1<T1>,
                           args: [T1]): CallEffect;
 export function apply<T1, T2>(context: any, fn: CallFunc2<T1, T2>,
-                          args: [T1, T2]): CallEffect;
+                              args: [T1, T2]): CallEffect;
 export function apply<T1, T2, T3>(context: any, fn: CallFunc3<T1, T2, T3>,
-                          args: [T1, T2, T3]): CallEffect;
+                                  args: [T1, T2, T3]): CallEffect;
 export function apply<T1, T2, T3, T4>(context: any,
                                       fn: CallFunc4<T1, T2, T3, T4>,
-                          args: [T1, T2, T3, T4]): CallEffect;
+                                      args: [T1, T2, T3, T4]): CallEffect;
 export function apply(context: any, fn: CallFuncRest,
                       ...args: any[]): CallEffect;
 

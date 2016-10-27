@@ -5,8 +5,8 @@ import { isEnd } from './channel'
 export const NOT_ITERATOR_ERROR = 'proc first argument (Saga function result) must be an iterator'
 
 const nextEffectId = autoInc()
-export const CHANNEL_END = {toString() { return '@@redux-saga/CHANNEL_END' }}
-export const TASK_CANCEL = {toString() { return '@@redux-saga/TASK_CANCEL' }}
+export const CHANNEL_END = {toString() { return '@@saga/CHANNEL_END' }}
+export const TASK_CANCEL = {toString() { return '@@saga/TASK_CANCEL' }}
 
 /**
  *  Used to track a parent task and its forks

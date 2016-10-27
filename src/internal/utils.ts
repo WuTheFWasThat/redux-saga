@@ -1,4 +1,4 @@
-export const sym = id => `@@redux-saga/${id}`
+export const sym = id => `@@saga/${id}`
 export const TASK  = sym('TASK')
 export const HELPER  = sym('HELPER')
 export const MATCH = sym('MATCH')

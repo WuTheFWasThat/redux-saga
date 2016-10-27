@@ -6,7 +6,7 @@ Once a task is forked, you can abort its execution using `yield cancel(task)`.
 
 To see how it works, let's consider a simple example: A background sync which can be started/stopped by some UI commands. Upon receiving a `START_BACKGROUND_SYNC` action, we fork a background task that will periodically sync some data from a remote server.
 
-The task will execute continually until a `STOP_BACKGROUND_SYNC` action is triggered. Then we cancel the background task and wait again for the next `START_BACKGROUND_SYNC` action.   
+The task will execute continually until a `STOP_BACKGROUND_SYNC` action is triggered. Then we cancel the background task and wait again for the next `START_BACKGROUND_SYNC` action.
 
 ```javascript
 import {  take, put, call, fork, cancel, cancelled } from 'redux-saga/effects'

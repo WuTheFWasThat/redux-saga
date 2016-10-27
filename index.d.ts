@@ -1,6 +1,5 @@
-import {Middleware} from "redux";
-import {Effect, Pattern} from "./effects";
-import {Task, Buffer, Channel, Predicate} from "./types";
+import {Effect, Pattern} from './effects';
+import {Task, Buffer, Channel, Predicate} from './types';
 
 export {Effect, Pattern, Task, Buffer, Channel, Predicate};
 
@@ -29,7 +28,7 @@ export interface Monitor {
 }
 
 
-export interface SagaMiddleware extends Middleware {
+export interface SagaRunner {
   run(saga: Saga0): Task;
   run<T1>(saga: Saga1<T1>,
           arg1: T1): Task;
@@ -43,9 +42,9 @@ export interface SagaMiddleware extends Middleware {
 }
 
 
-export default function sagaMiddlewareFactory(options?: {
+export default function sagaRunnerFactory(options?: {
   sagaMonitor?: Monitor;
-}): SagaMiddleware;
+}): SagaRunner;
 
 
 type Unsubscribe = () => void;

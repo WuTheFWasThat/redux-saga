@@ -19,7 +19,7 @@ module.exports = {
     ]
   },
   output: {
-    library: 'ReduxSaga',
+    library: 'Saga',
     libraryTarget: 'umd'
   },
   resolve: {

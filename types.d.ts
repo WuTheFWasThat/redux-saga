@@ -6,7 +6,7 @@ export interface Task {
   result(): any;
   result<T>(): T;
   error(): any;
-  done: Promise<any>;
+  done: Promise<any>; // tslint:disable-line member-ordering
   cancel(): void;
 }
 

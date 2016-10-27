@@ -2,9 +2,9 @@
 
 ## Objectives of this tutorial
 
-This tutorial attempts to introduce redux-saga in a (hopefully) accessible way.
+This tutorial attempts to introduce saga in a (hopefully) accessible way.
 
-For our getting started tutorial, we are going to use the trivial Counter demo from the Redux repo. The application is quite simple but is a good fit to illustrate the basic concepts of redux-saga without being lost in excessive details.
+For our getting started tutorial, we are going to use the trivial Counter demo from the Redux repo. The application is quite simple but is a good fit to illustrate the basic concepts of saga without being lost in excessive details.
 
 ### The initials setup
 

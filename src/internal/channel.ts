@@ -1,7 +1,7 @@
 import { is, check, remove, MATCH, internalErr } from './utils'
 import { buffers } from './buffers'
 
-const CHANNEL_END_TYPE = '@@redux-saga/CHANNEL_END'
+const CHANNEL_END_TYPE = '@@saga/CHANNEL_END'
 export const END = {type: CHANNEL_END_TYPE}
 export const isEnd = a => a && a.type === CHANNEL_END_TYPE
 
@@ -115,7 +115,7 @@ export function eventChannel(subscribe, buffer = buffers.none(), matcher) {
     check(matcher, is.func, 'Invalid match function passed to eventChannel')
   }
 
-  const chan = channel(buffer)
+  const chan = channel(buffer as any)
   const unsubscribe = subscribe(input => {
     if (isEnd(input)) {
       chan.close()

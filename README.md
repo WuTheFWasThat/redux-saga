@@ -1,21 +1,19 @@
-# redux-saga
+# saga
 
 [![Join the chat at https://gitter.im/wuthefwasthat/saga](https://badges.gitter.im/wuthefwasthat/saga.svg)](https://gitter.im/wuthefwasthat/saga?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![npm version](https://img.shields.io/npm/v/redux-saga.svg?style=flat-square)](https://www.npmjs.com/package/redux-saga)
 
-`redux-saga` is a library that aims to make side effects (i.e. asynchronous things like data fetching and impure things like accessing the browser cache) in React/Redux applications easier and better.
+`saga` is a library that aims to make side effects (i.e. asynchronous things like data fetching and impure things like accessing the browser cache) easier and better.
 
 The mental model is that a saga is like a separate thread in your application that's solely responsible for side effects.
 
 It uses an ES6 feature called Generators to make those asynchronous flows easy to read, write and test. *(if you're not familiar with them [here are some introductory links](https://yelouafi.github.io/redux-saga/docs/ExternalResources.html))* By doing so, these asynchronous flows look like your standard synchronous JavaScript code. (kind of like `async`/`await`, but generators have a few more awesome features we need)
-
-You might've used `redux-thunk` before to handle your data fetching. Contrary to redux thunk, you don't end up in callback hell, you can test your asynchronous flows easily and your actions stay pure.
 
 # Getting started
 
 ## Install
 
 ```sh
-$ npm install --save redux-saga
+$ npm install --save TODO
 ```
 
 Alternatively, you may use the provided UMD builds directly in the `<script>` tag of an HTML page. See [this section](#using-umd-build-in-the-browser).
@@ -40,8 +38,8 @@ The Component dispatches a plain Object action to the Store. We'll create a Saga
 #### `sagas.js`
 
 ```javascript
-import { takeEvery, takeLatest } from 'redux-saga'
-import { call, put } from 'redux-saga/effects'
+import { takeEvery, takeLatest } from 'saga'
+import { call, put } from 'saga/effects'
 import Api from '...'
 
 // worker Saga: will be fired on USER_FETCH_REQUESTED actions
@@ -89,7 +87,7 @@ export default mySaga;
 
 # Using umd build in the browser
 
-There is also a **umd** build of `redux-saga` available in the `dist/` folder. When using the umd build `redux-saga` is available as `ReduxSaga` in the window object.
+There is also a **umd** build of `saga` available in the `dist/` folder. When using the umd build `saga` is available as `Saga` in the window object.
 
 The umd version is useful if you don't use Webpack or Browserify. You can access it directly from [unpkg](unpkg.com).
 
@@ -98,4 +96,4 @@ The following builds are available:
 - [https://unpkg.com/redux-saga/dist/redux-saga.js](https://unpkg.com/redux-saga/dist/redux-saga.js)
 - [https://unpkg.com/redux-saga/dist/redux-saga.min.js](https://unpkg.com/redux-saga/dist/redux-saga.min.js)
 
-**Important!** If the browser you are targeting doesn't support *ES2015 generators*, you must provide a valid polyfill, such as [the one provided by `babel`](https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.25/browser-polyfill.min.js). The polyfill must be imported before **redux-saga**:
+**Important!** If the browser you are targeting doesn't support *ES2015 generators*, you must provide a valid polyfill, such as [the one provided by `babel`](https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.25/browser-polyfill.min.js). The polyfill must be imported before **saga**:

@@ -1,17 +1,17 @@
 {
-  "name": "redux-saga",
+  "name": "saga",
   "version": "0.12.0",
-  "description": "Saga fork.  Threading model, no redux",
+  "description": "Alternative model for side effects.  Fork of redux-saga, with redux removed",
   "main": "lib/index.js",
   "jsnext:main": "es/index.js",
   "scripts": {
-    "lint": "eslint src",
+    "lint": "tslint --exclude 'node_modules/**/*' '**/*.ts' && eslint --ignore-path .gitignore --ignore-pattern 'test/**/*' .",
     "test": "ts-node test.ts",
     "test_old": "cross-env BABEL_ENV=cjs babel-node test/index.js | tap-spec",
     "check": "npm run lint && npm run test",
     "compile": "rimraf lib && cross-env BABEL_ENV=cjs babel -d lib/ src/",
-    "build:umd:dev": "cross-env BABEL_ENV=cjs webpack src/index.js dist/redux-saga.js --config webpack.config.dev.js",
-    "build:umd:prod": "cross-env BABEL_ENV=cjs webpack src/index.js dist/redux-saga.min.js --config webpack.config.prod.js",
+    "build:umd:dev": "cross-env BABEL_ENV=cjs webpack src/index.js dist/saga.js --config webpack.config.dev.js",
+    "build:umd:prod": "cross-env BABEL_ENV=cjs webpack src/index.js dist/saga.min.js --config webpack.config.prod.js",
     "build:es": "cross-env BABEL_ENV=es babel src --out-dir es",
     "build": "rimraf dist es && npm run build:umd:dev && npm run build:umd:prod && npm run build:es",
     "prepublish_old": "npm run check && npm run compile && npm run build",
@@ -27,7 +27,6 @@
   },
   "keywords": [
     "javascript",
-    "redux",
     "saga",
     "effects",
     "side effects"
@@ -49,15 +48,12 @@
     "babel-preset-react": "^6.11.1",
     "babel-preset-stage-2": "^6.13.0",
     "cross-env": "^1.0.8",
-    "eslint": "^2.8.0",
+    "eslint": "^3.8.1",
     "express": "^4.13.3",
     "gitbook-cli": "1.0.1",
     "isomorphic-fetch": "^2.2.0",
     "react": "^15.0.0",
     "react-dom": "^15.0.0",
-    "react-redux": "^4.4.5",
-    "redux": "^3.5.1",
-    "redux-logger": "^2.6.1",
     "rimraf": "^2.4.3",
     "tap-spec": "^4.1.1",
     "tape": "^4.2.2",
@@ -71,7 +67,7 @@
     "webpack-hot-middleware": "^2.6.0"
   },
   "typings": "./index.d.ts",
-  "npmName": "redux-saga",
+  "npmName": "saga",
   "npmFileMap": [
     {
       "basePath": "/dist/",

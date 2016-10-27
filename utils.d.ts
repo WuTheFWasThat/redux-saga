@@ -1,8 +1,8 @@
 import {
   Effect, TakeEffectDescriptor,
-  RaceEffectDescriptor, CallEffectDescriptor, ForkEffectDescriptor
-} from "./effects";
-import {Predicate, Task} from "./types";
+  RaceEffectDescriptor, CallEffectDescriptor, ForkEffectDescriptor,
+} from './effects';
+import {Predicate, Task} from './types';
 
 
 export const TASK: string;
@@ -28,7 +28,7 @@ export const is: {
 interface Deferred<R> {
   resolve(result: R): void;
   reject(error: any): void;
-  promise: Promise<R>;
+  promise: Promise<R>; // tslint:disable-line member-ordering
 }
 
 export function deferred<T, R>(props?: T): T & Deferred<R>;

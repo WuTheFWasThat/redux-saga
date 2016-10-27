@@ -15,7 +15,7 @@ function sleep(ns) {
 
 function* test() {
   yield call(print, 'Hello world')
-  yield call(sleep, 10000)
+  yield call(sleep, 2000)
   yield call(print, 'yea')
 }
 sagaRunner(test)
