@@ -34,16 +34,16 @@
 > Notes:
 
 > - Each function below returns a plain JavaScript object and does not perform any execution.
-> - The execution is performed by the middleware during the Iteration process described above.
-> - The middleware examines each Effect description and performs the appropriate action.
+> - The execution is performed by the saga runner during the Iteration process described above.
+> - The saga runner examines each Effect description and performs the appropriate action.
 
 ### `take(channel)`
 
-Creates an Effect description that instructs the middleware to wait for a specified message from the provided Channel. If the channel is already closed, then the Generator will immediately terminate following the same process described above for `take(pattern)`.
+Creates an Effect description that instructs the saga runner to wait for a specified message from the provided Channel. If the channel is already closed, then the Generator will immediately terminate following the same process described above for `take(pattern)`.
 
 ### `call(fn, ...args)`
 
-Creates an Effect description that instructs the middleware to call the function `fn` with `args` as arguments.
+Creates an Effect description that instructs the saga runner to call the function `fn` with `args` as arguments.
 
 - `fn: Function` - A Generator function, or normal function which either returns a Promise as result, or any other value.
 
@@ -53,19 +53,19 @@ Creates an Effect description that instructs the middleware to call the function
 
 `fn` can be either a *normal* or a Generator function.
 
-The middleware invokes the function and examines its result.
+The saga runner invokes the function and examines its result.
 
-If the result is an Iterator object, the middleware will run that Generator function, just like he did with the
-startup Generators (passed to the middleware on startup). The parent Generator will be
+If the result is an Iterator object, the saga runner will run that Generator function, just like he did with the
+startup Generators (passed to the saga runner on startup). The parent Generator will be
 suspended until the child Generator terminates normally, in which case the parent Generator
 is resumed with the value returned by the child Generator. Or until the child aborts with some
 error, in which case an error will be thrown inside the parent Generator.
 
-If the result is a Promise, the middleware will suspend the Generator until the Promise is
+If the result is a Promise, the saga runner will suspend the Generator until the Promise is
 resolved, in which case the Generator is resumed with the resolved value. or until the Promise
 is rejected, in which case an error is thrown inside the Generator.
 
-If the result is not an Iterator object nor a Promise, the middleware will immediately return that value back to the saga,
+If the result is not an Iterator object nor a Promise, the saga runner will immediately return that value back to the saga,
 so that it can resume its execution synchronously.
 
 When an error is thrown inside the Generator. If it has a `try/catch` block surrounding the
@@ -84,7 +84,7 @@ Alias for `call([context, fn], ...args)`.
 
 ### `cps(fn, ...args)`
 
-Creates an Effect description that instructs the middleware to invoke `fn` as a Node style function.
+Creates an Effect description that instructs the saga runner to invoke `fn` as a Node style function.
 
 - `fn: Function` - a Node style function. i.e. a function which accepts in addition to its arguments,
 an additional callback to be invoked by `fn` when it terminates. The callback accepts two parameters,
@@ -94,12 +94,12 @@ where the first parameter is used to report errors while the second is used to r
 
 #### Notes
 
-The middleware will perform a call `fn(...arg, cb)`. The `cb` is a callback passed by the middleware to
-`fn`. If `fn` terminates normally, it must call `cb(null, result)` to notify the middleware
+The saga runner will perform a call `fn(...arg, cb)`. The `cb` is a callback passed by the saga runner to
+`fn`. If `fn` terminates normally, it must call `cb(null, result)` to notify thesaga runner
 of a successful result. If `fn` encounters some error, then it must call `cb(error)` in order to
-notify the middleware that an error has occurred.
+notify the saga runner that an error has occurred.
 
-The middleware remains suspended until `fn` terminates.
+The saga runner remains suspended until `fn` terminates.
 
 ### `cps([context, fn], ...args)`
 
@@ -107,7 +107,7 @@ Supports passing a `this` context to `fn` (object method invocation)
 
 ### `fork(fn, ...args)`
 
-Creates an Effect description that instructs the middleware to perform a *non-blocking call* on `fn`
+Creates an Effect description that instructs the saga runner to perform a *non-blocking call* on `fn`
 
 #### Arguments
 
@@ -120,7 +120,7 @@ returns a [Task](#task) object.
 #### Note
 
 `fork`, like `call`, can be used to invoke both normal and Generator functions. But, the calls are
-non-blocking, the middleware doesn't suspend the Generator while waiting for the result of `fn`.
+non-blocking, the saga runner doesn't suspend the Generator while waiting for the result of `fn`.
 Instead as soon as `fn` is invoked, the Generator resumes immediately.
 
 `fork`, alongside `race`, is a central Effect for managing concurrency between Sagas.
@@ -160,7 +160,7 @@ Supports spawning functions with a `this` context
 
 ### `join(task)`
 
-Creates an Effect description that instructs the middleware to wait for the result
+Creates an Effect description that instructs the saga runner to wait for the result
 of a previously forked task.
 
 - `task: Task` - A [Task](#task) object returned by a previous `fork`
@@ -173,13 +173,13 @@ effect. Similarly, any potential callers of those joiners will be cancelled as w
 
 ### `cancel(task)`
 
-Creates an Effect description that instructs the middleware to cancel a previously forked task.
+Creates an Effect description that instructs the saga runner to cancel a previously forked task.
 
 - `task: Task` - A [Task](#task) object returned by a previous `fork`
 
 #### Notes
 
-To cancel a running task, the middleware will invoke `return` on the underlying Generator
+To cancel a running task, the saga runner will invoke `return` on the underlying Generator
 object. This will cancel the current Effect in the task and jump to the finally block (if defined).
 
 Inside the finally block, you can execute any cleanup logic or dispatch some action to keep the
@@ -187,7 +187,7 @@ store in a consistent state (e.g. reset the state of a spinner to false when an 
 is cancelled). You can check inside the finally block if a Saga was cancelled by issuing
 a `yield cancelled()`.
 
-Cancellation propagates downward to child sagas. When cancelling a task, the middleware will also
+Cancellation propagates downward to child sagas. When cancelling a task, the saga runner will also
 cancel the current Effect (where the task is currently blocked). If the current Effect
 is a call to another Saga, it will be also cancelled. When cancelling a Saga, all *attached
 forks* (sagas forked using `yield fork()`) will be cancelled. This means that cancellation
@@ -222,75 +222,9 @@ function* mySaga() {
 }
 ```
 
-### `select(selector, ...args)`
-
-Creates an effect that instructs the middleware to invoke the provided selector on the
-current Store's state (i.e. returns the result of `selector(getState(), ...args)`).
-
-- `selector: Function` - a function `(state, ...args) => args`. It takes the
-current state and optionally some arguments and returns a slice of the current Store's state
-
-- `args: Array<any>` - optional arguments to be passed to the selector in addition of `getState`.
-
-If `select` is called without argument (i.e. `yield select()`) then the effect is resolved
-with the entire state (the same result of a `getState()` call).
-
-> It's important to note that when an action is dispatched to the store, the middleware first
-forwards the action to the reducers and then notifies the Sagas. This means that when you query the
-Store's State, you get the State **after** the action has been applied.
-> However, this behavior is only guaranteed if all subsequent middlewares call `next(action)` synchronously.  If any subsequent middleware calls `next(action)` asynchronously (which is unusual but possible), then the sagas will get the state from **before** the action is applied.  Therefore it is recommended to review the source of each subsequent middleware to ensure it calls `next(action)` synchronously, or else ensure that redux-saga is the last middleware in the call chain.
-
-#### Notes
-
-Preferably, a Saga should be autonomous and should not depend on the Store's state. This makes
-it easy to modify the state implementation without affecting the Saga code. A saga should preferably
-depend only on its own internal control state when possible. But sometimes, one could
-find it more convenient for a Saga to query the state instead of maintaining the needed data by itself
-(for example, when a Saga duplicates the logic of invoking some reducer to compute a state that was
-already computed by the Store).
-
-For example, suppose we have this state shape in our application:
-
-```javascript
-state = {
-  cart: {...}
-}
-```
-
-We can create a *selector*, i.e. a function which knows how to extract the `cart` data from the State:
-
-`./selectors`
-```javascript
-export const getCart = state => state.cart
-```
-
-Then we can use that selector from inside a Saga using the `select` Effect:
-
-`./sagas.js`
-```javascript
-import { take, fork, select } from 'redux-saga/effects'
-import { getCart } from './selectors'
-
-function* checkout() {
-  // query the state using the exported selector
-  const cart = yield select(getCart)
-
-  // ... call some API endpoint then dispatch a success/error action
-}
-
-export default function* rootSaga() {
-  while (true) {
-    yield take('CHECKOUT_REQUEST')
-    yield fork(checkout)
-  }
-}
-```
-
-`checkout` can get the needed information directly by using `select(getCart)`. The Saga is coupled only with the `getCart` selector. If we have many Sagas (or React Components) that needs to access the `cart` slice, they will all be coupled to the same function `getCart`. And if we now change the state shape, we need only to update `getCart`.
-
 ### `flush(channel)`
 
-Creates an effect that instructs the middleware to flush all buffered items from the channel. Flushed items are returned back to the saga, so they can be utilized if needed.
+Creates an effect that instructs the saga runner to flush all buffered items from the channel. Flushed items are returned back to the saga, so they can be utilized if needed.
 
 - `channel: Channel` - a [`Channel`](#channel) Object.
 
@@ -316,7 +250,7 @@ function* saga() {
 
 ### `cancelled()`
 
-Creates an effect that instructs the middleware to return whether this generator has been cancelled. Typically
+Creates an effect that instructs the saga runner to return whether this generator has been cancelled. Typically
 you use this Effect in a finally block to run Cancellation specific code
 
 #### Example
@@ -339,7 +273,7 @@ function* saga() {
 
 ### `race(effects)`
 
-Creates an Effect description that instructs the middleware to run a *Race* between
+Creates an Effect description that instructs the saga runner to run a *Race* between
 multiple Effects (this is similar to how `Promise.race([...])` behaves).
 
 `effects: Object` - a dictionary Object of the form {label: effect, ...}
@@ -371,11 +305,11 @@ will be a single keyed object `{cancel: action}`, where action is the dispatched
 
 #### Notes
 
-When resolving a `race`, the middleware automatically cancels all the losing Effects.
+When resolving a `race`, the saga runner automatically cancels all the losing Effects.
 
 ### `[...effects] (parallel effects)`
 
-Creates an Effect description that instructs the middleware to run multiple Effects
+Creates an Effect description that instructs the saga runner to run multiple Effects
 in parallel and wait for all of them to complete.
 
 #### Example
@@ -395,7 +329,7 @@ function* mySaga() {
 
 #### Notes
 
-When running Effects in parallel, the middleware suspends the Generator until one of the following occurs:
+When running Effects in parallel, the saga runner suspends the Generator until one of the following occurs:
 
 - All the Effects completed with success: resumes the Generator with an array containing the results of all Effects.
 
@@ -480,15 +414,15 @@ Used to implement the buffering strategy for a channel. The Buffer interface def
 
 ### SagaMonitor
 
-Used by the middleware to dispatch monitoring events. Actually the middleware dispatches 4 events:
+Used by the saga runner to dispatch monitoring events. Actually the saga runner dispatches 4 events:
 
-- When an effect is triggered (via `yield someEffect`) the middleware invokes `sagaMonitor.effectTriggered`
+- When an effect is triggered (via `yield someEffect`) the saga runner invokes `sagaMonitor.effectTriggered`
 
-- If the effect is resolved with success the middleware invokes `sagaMonitor.effectResolved`
+- If the effect is resolved with success the saga runner invokes `sagaMonitor.effectResolved`
 
-- If the effect is rejected with an error the middleware invokes `sagaMonitor.effectRejected`
+- If the effect is rejected with an error the saga runner invokes `sagaMonitor.effectRejected`
 
-- finally is the effect is cancelled the middleware invokes `sagaMonitor.effectCancelled`
+- finally is the effect is cancelled the saga runner invokes `sagaMonitor.effectCancelled`
 
 Below the signature for each method
 

@@ -66,7 +66,7 @@ function* fetchAll() {
 In fact, attached forks shares the same semantics with the parallel Effect:
 
 - We're executing tasks in parallel
-- The parent will terminate after all launched tasks terminate  
+- The parent will terminate after all launched tasks terminate
 
 
 And this applies for all other semantics as well (error and cancellation propagation). You can understand how
@@ -125,8 +125,8 @@ function* main() {
 If at a moment, for example, `fetchAll` is blocked on the `call(delay, 1000)` Effect, and say, `task1` failed, then the whole
 `fetchAll` task will fail causing
 
-- Cancellation of all other pending tasks. This includes:  
-  - The *main task* (the body of `fetchAll`): cancelling it means cancelling the current Effect `call(delay, 1000)`  
+- Cancellation of all other pending tasks. This includes:
+  - The *main task* (the body of `fetchAll`): cancelling it means cancelling the current Effect `call(delay, 1000)`
   - The other forked tasks which are still pending. i.e. `task2` in our example.
 
 - The `call(fetchAll)` will raise itself an error which will be caught in the `catch` body of `main`
@@ -154,7 +154,7 @@ Detached forks live in their own execution context. A parent doesn't wait for de
 errors from spawned tasks are not bubbled up to the parent. And cancelling a parent doesn't automatically cancel detached
 forks (you need to cancel them explicitly).
 
-In short, detached forks behave like root Sagas started directly using the `middleware.run` API.
+In short, detached forks behave like root Sagas started directly using the `runSaga` API.
 
 
 **WIP**

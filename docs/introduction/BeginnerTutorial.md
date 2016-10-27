@@ -43,36 +43,14 @@ export function* helloSaga() {
 }
 ```
 
-So nothing scary, just a normal function (except for the `*`). All it does is print a greeting message into the console.
-
-In order to run our Saga, we need to:
-
-- create a Saga middleware with a list of Sagas to run (so far we have only one `helloSaga`)
-- connect the Saga middleware to the Redux store
-
 We will make the changes to `main.js`:
 
 ```javascript
 // ...
-import { createStore, applyMiddleware } from 'redux'
-import createSagaMiddleware from 'redux-saga'
+import runSaga from 'saga'
 
-// ...
-import { helloSaga } from './sagas'
-
-const sagaMiddleware = createSagaMiddleware()
-const store = createStore(
-  reducer,
-  applyMiddleware(sagaMiddleware)
-)
-sagaMiddleware.run(helloSaga)
-
-// rest unchanged
+runSaga(helloSaga, {})
 ```
-
-First we import our Saga from the `./sagas` module. Then we create a middleware using the factory function `createSagaMiddleware` exported by the `redux-saga` library.
-
-Before running our `helloSaga`, we must connect our middleware to the Store using `applyMiddleware`. Then we can use the `sagaMiddleware.run(helloSaga)` to start our Saga.
 
 So far, our Saga does nothing special. It just logs a message then exits.
 
@@ -137,11 +115,11 @@ Time for some explanations.
 
 We import `delay`, a utility function that returns a [Promise](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise) that will resolve after a specified number of milliseconds. We'll use this function to *block* the Generator.
 
-Sagas are implemented as [Generator functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*) that *yield* objects to the redux-saga middleware. The yielded objects are a kind of instruction to be interpreted by the middleware. When a Promise is yielded to the middleware, the middleware will suspend the Saga until the Promise completes. In the above example, the `incrementAsync` Saga is suspended until the Promise returned by `delay` resolves, which will happen after 1 second.
+Sagas are implemented as [Generator functions](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function*) that *yield* objects to the saga runner. The yielded objects are a kind of instruction to be interpreted by the runner. When a Promise is yielded to the runner, it will suspend the Saga until the Promise completes. In the above example, the `incrementAsync` Saga is suspended until the Promise returned by `delay` resolves, which will happen after 1 second.
 
-Once the Promise is resolved, the middleware will resume the Saga, executing code until the next yield. In this example, the next statement is another yielded object: the result of calling `put({type: 'INCREMENT'})`, which instructs the middleware to dispatch an `INCREMENT` action.
+Once the Promise is resolved, the runner will resume the Saga, executing code until the next yield. In this example, the next statement is another yielded object: the result of calling `put({type: 'INCREMENT'})`, which instructs the runner to dispatch an `INCREMENT` action.
 
-`put` is one example of what we call an *Effect*. Effects are simple JavaScript objects which contain instructions to be fulfilled by the middleware. When a middleware retrieves an Effect yielded by a Saga, the Saga is paused until the Effect is fulfilled.
+`put` is one example of what we call an *Effect*. Effects are simple JavaScript objects which contain instructions to be fulfilled by the runner. When a runner retrieves an Effect yielded by a Saga, the Saga is paused until the Effect is fulfilled.
 
 So to summarize, the `incrementAsync` Saga sleeps for 1 second via the call to `delay(1000)`, then dispatches an `INCREMENT` action.
 
@@ -159,15 +137,13 @@ export default function* rootSaga() {
 }
 ```
 
-This Saga yields an array with the results of calling our two sagas, `helloSaga` and `watchIncrementAsync`. This means the two resulting Generators will be started in parallel. Now we only have to invoke `sagaMiddleware.run` on the root Saga in `main.js`.
+This Saga yields an array with the results of calling our two sagas, `helloSaga` and `watchIncrementAsync`. This means the two resulting Generators will be started in parallel. Now we only have to invoke `runSaga` on the root Saga in `main.js`.
 
 ```javascript
 // ...
 import rootSaga from './sagas'
 
-const sagaMiddleware = createSagaMiddleware()
-const store = ...
-sagaMiddleware.run(rootSaga)
+runSaga(rootSaga)
 
 // ...
 ```
@@ -190,7 +166,7 @@ test('incrementAsync Saga test', (assert) => {
 });
 ```
 
-Since `incrementAsync` is a Generator function, when we run it outside the middleware,
+Since `incrementAsync` is a Generator function, when we call it outside a saga runner,
 Each time you invoke `next` on the generator, you get an object of the following shape
 
 ```javascript
@@ -259,16 +235,16 @@ export function* incrementAsync() {
 
 Instead of doing `yield delay(1000)`, we're now doing `yield call(delay, 1000)`. What's the difference?
 
-In the first case, the yield expression `delay(1000)` is evaluated before it gets passed to the caller of `next` (the caller could be the middleware when running our code. It could also be our test code which runs the Generator function and iterates over the returned Generator). So what the caller gets is a Promise, like in the test code above.
+In the first case, the yield expression `delay(1000)` is evaluated before it gets passed to the caller of `next` (the caller could be a saga runner, or some test code which runs the Generator function and iterates over the returned Generator). So what the caller gets is a Promise, like in the test code above.
 
-In the second case, the yield expression `call(delay, 1000)` is what gets passed to the caller of `next`. `call` just like `put`, returns an Effect which instructs the middleware to call a given function with the given arguments. In fact, neither `put` nor `call` performs any dispatch or asynchronous call by themselves, they simply return plain JavaScript objects.
+In the second case, the yield expression `call(delay, 1000)` is what gets passed to the caller of `next`. `call` just like `put`, returns an Effect which instructs the saga runnerto call a given function with the given arguments. In fact, neither `put` nor `call` performs any dispatch or asynchronous call by themselves, they simply return plain JavaScript objects.
 
 ```javascript
 put({type: 'INCREMENT'}) // => { PUT: {type: 'INCREMENT'} }
 call(delay, 1000)        // => { CALL: {fn: delay, args: [1000]}}
 ```
 
-What happens is that the middleware examines the type of each yielded Effect then decides how to fulfill that Effect. If the Effect type is a `PUT` then it will dispatch an action to the Store. If the Effect is a `CALL` then it'll call the given function.
+What happens is that the saga runner examines the type of each yielded Effect then decides how to fulfill that Effect. If the Effect type is a `PUT` then it will dispatch an action to the Store. If the Effect is a `CALL` then it'll call the given function.
 
 This separation between Effect creation and Effect execution makes it possible to test our Generator in a surprisingly easy way:
 

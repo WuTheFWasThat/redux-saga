@@ -17,9 +17,9 @@ function* logActions() {
 }
 ```
 
-It will put the application into an infinite loop because `take()` only creates a description of the effect. Unless you `yield` it for the middleware to execute, the `while` loop will behave like a regular `while` loop, and freeze your application.
+It will put the application into an infinite loop because `take()` only creates a description of the effect. Unless you `yield` it for the saga runner to execute, the `while` loop will behave like a regular `while` loop, and freeze your application.
 
-Adding `yield` will pause the generator and return control to the Redux Saga middleware which will execute the effect. In case of `take()`, Redux Saga will wait for the next action matching the pattern, and only then will resume the generator.
+Adding `yield` will pause the generator and return control to the saga runner which will execute the effect. In case of `take()`, Redux Saga will wait for the next action matching the pattern, and only then will resume the generator.
 
 To fix the example above, simply `yield` the effect returned by `take()`:
 

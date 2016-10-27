@@ -1,6 +1,6 @@
 # Declarative Effects
 
-In `redux-saga`, Sagas are implemented using Generator functions. To express the Saga logic we yield plain JavaScript Objects from the Generator. We call those Objects *Effects*. An Effect is simply an object which contains some information to be interpreted by the middleware. You can view Effects like instructions to the middleware to perform some operation (invoke some asynchronous function, dispatch an action to the store).
+In `redux-saga`, Sagas are implemented using Generator functions. To express the Saga logic we yield plain JavaScript Objects from the Generator. We call those Objects *Effects*. An Effect is simply an object which contains some information to be interpreted by the saga runner. You can view Effects like instructions to the saga runner  to perform some operation (invoke some asynchronous function, dispatch an action to the store).
 
 To create Effects, you use the functions provided by the library in the `redux-saga/effects` package.
 
@@ -62,7 +62,7 @@ Instead of invoking the asynchronous function directly from inside the Generator
 }
 ```
 
-Put another way, the Generator will yield plain Objects containing *instructions*, and the `redux-saga` middleware will take care of executing those instructions and giving back the result of their execution to the Generator. This way, when testing the Generator, all we need to do is to check that it yields the expected instruction by doing a simple `deepEqual` on the yielded Object.
+Put another way, the Generator will yield plain Objects containing *instructions*, and the saga runner will take care of executing those instructions and giving back the result of their execution to the Generator. This way, when testing the Generator, all we need to do is to check that it yields the expected instruction by doing a simple `deepEqual` on the yielded Object.
 
 For this reason, the library provides a different way to perform asynchronous calls.
 
@@ -75,7 +75,7 @@ function* fetchProducts() {
 }
 ```
 
-We're using now the `call(fn, ...args)` function. **The difference from the preceding example is that now we're not executing the fetch call immediately, instead, `call` creates a description of the effect**. Just as in Redux you use action creators to create a plain object describing the action that will get executed by the Store, `call` creates a plain object describing the function call. The redux-saga middleware takes care of executing the function call and resuming the generator with the resolved response.
+We're using now the `call(fn, ...args)` function. **The difference from the preceding example is that now we're not executing the fetch call immediately, instead, `call` creates a description of the effect**. Just as in Redux you use action creators to create a plain object describing the action that will get executed by the Store, `call` creates a plain object describing the function call. The saga runner takes care of executing the function call and resuming the generator with the resolved response.
 
 This allows us to easily test the Generator outside the Redux environment. Because `call` is just a function which returns a plain Object.
 

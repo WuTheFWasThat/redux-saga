@@ -41,7 +41,7 @@ function* watchAndLog() {
 }
 ```
 
-The `take` is just like `call` and `put` we saw earlier. It creates another command object that tells the middleware to wait for a specific action. The resulting behavior of the `call` Effect is the same as when the middleware suspends the Generator until a Promise resolves. In the `take` case it'll suspend the Generator until a matching action is dispatched. In the above example `watchAndLog` is suspended until any action is dispatched.
+The `take` is just like `call` and `put` we saw earlier. It creates another command object that tells the saga runner to wait for a specific action. The resulting behavior of the `call` Effect is the same as when the saga runner suspends the Generator until a Promise resolves. In the `take` case it'll suspend the Generator until a matching action is dispatched. In the above example `watchAndLog` is suspended until any action is dispatched.
 
 Note how we're running an endless loop `while (true)`. Remember this is a Generator function, which doesn't have a run-to-completion behavior. Our Generator will block on each iteration waiting for an action to happen.
 

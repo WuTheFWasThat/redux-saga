@@ -4,10 +4,10 @@ This is a glossary of the core terms in Redux Saga.
 
 ### Effect
 
-An effect is a plain JavaScript Object containing some instructions to be executed by the saga middleware.
+An effect is a plain JavaScript Object containing some instructions to be executed by the saga runner.
 
 You create effects using factory functions provided by the redux-saga library. For example you use
-`call(myfunc, 'arg1', 'arg2')` to instruct the middleware to invoke `myfunc('arg1', 'arg2')` and return
+`call(myfunc, 'arg1', 'arg2')` to instruct the saga runner to invoke `myfunc('arg1', 'arg2')` and return
 the result back to the Generator that yielded the effect
 
 ### Task

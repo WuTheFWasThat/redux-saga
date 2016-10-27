@@ -1,5 +1,4 @@
 
-import './middleware'
 import './proc/base'
 import './proc/promise'
 import './proc/take'

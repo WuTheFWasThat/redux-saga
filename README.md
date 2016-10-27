@@ -4,7 +4,7 @@
 
 `redux-saga` is a library that aims to make side effects (i.e. asynchronous things like data fetching and impure things like accessing the browser cache) in React/Redux applications easier and better.
 
-The mental model is that a saga is like a separate thread in your application that's solely responsible for side effects. `redux-saga` is a redux middleware, which means this thread can be started, paused and cancelled from the main application with normal redux actions, it has access to the full redux application state and it can dispatch redux actions as well.
+The mental model is that a saga is like a separate thread in your application that's solely responsible for side effects.
 
 It uses an ES6 feature called Generators to make those asynchronous flows easy to read, write and test. *(if you're not familiar with them [here are some introductory links](https://yelouafi.github.io/redux-saga/docs/ExternalResources.html))* By doing so, these asynchronous flows look like your standard synchronous JavaScript code. (kind of like `async`/`await`, but generators have a few more awesome features we need)
 
@@ -76,31 +76,6 @@ function* mySaga() {
 export default mySaga;
 ```
 
-To run our Saga, we'll have to connect it to the Redux Store using the `redux-saga` middleware.
-
-#### `main.js`
-
-```javascript
-import { createStore, applyMiddleware } from 'redux'
-import createSagaMiddleware from 'redux-saga'
-
-import reducer from './reducers'
-import mySaga from './sagas'
-
-// create the saga middleware
-const sagaMiddleware = createSagaMiddleware()
-// mount it on the Store
-const store = createStore(
-  reducer,
-  applyMiddleware(sagaMiddleware)
-)
-
-// then run the saga
-sagaMiddleware.run(mySaga)
-
-// render the application
-```
-
 # Documentation
 
 - [Introduction](http://yelouafi.github.io/redux-saga/docs/introduction/BeginnerTutorial.html)
@@ -124,9 +99,3 @@ The following builds are available:
 - [https://unpkg.com/redux-saga/dist/redux-saga.min.js](https://unpkg.com/redux-saga/dist/redux-saga.min.js)
 
 **Important!** If the browser you are targeting doesn't support *ES2015 generators*, you must provide a valid polyfill, such as [the one provided by `babel`](https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.25/browser-polyfill.min.js). The polyfill must be imported before **redux-saga**:
-
-```javascript
-import 'babel-polyfill'
-// then
-import sagaMiddleware from 'redux-saga'
-```
