@@ -1,5 +1,6 @@
 import { is, check, remove, MATCH, internalErr} from './utils'
 import {buffers} from './buffers'
+import asap from './asap'
 
 const CHANNEL_END_TYPE = '@@redux-saga/CHANNEL_END'
 export const END = {type: CHANNEL_END_TYPE}
@@ -15,9 +16,11 @@ export function emitter() {
 
   function emit(item) {
     const arr = subscribers.slice()
-    for (var i = 0, len =  arr.length; i < len; i++) {
-      arr[i](item)
-    }
+    asap(() => {
+      for (var i = 0, len = arr.length; i < len; i++) {
+        arr[i](item)
+      }
+    })
   }
 
   return {
