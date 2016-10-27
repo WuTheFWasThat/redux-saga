@@ -112,11 +112,6 @@ sagaMiddleware.run(mySaga)
 - [Glossary](http://yelouafi.github.io/redux-saga/docs/Glossary.html)
 - [API Reference](http://yelouafi.github.io/redux-saga/docs/api/index.html)
 
-# Translation
-
-- [Chinese](https://github.com/superRaytin/redux-saga-in-chinese)
-- [Chinese Traditional](https://github.com/neighborhood999/redux-saga)
-
 # Using umd build in the browser
 
 There is also a **umd** build of `redux-saga` available in the `dist/` folder. When using the umd build `redux-saga` is available as `ReduxSaga` in the window object.
@@ -125,7 +120,7 @@ The umd version is useful if you don't use Webpack or Browserify. You can access
 
 The following builds are available:
 
-- [https://unpkg.com/redux-saga/dist/redux-saga.js](https://unpkg.com/redux-saga/dist/redux-saga.js)  
+- [https://unpkg.com/redux-saga/dist/redux-saga.js](https://unpkg.com/redux-saga/dist/redux-saga.js)
 - [https://unpkg.com/redux-saga/dist/redux-saga.min.js](https://unpkg.com/redux-saga/dist/redux-saga.min.js)
 
 **Important!** If the browser you are targeting doesn't support *ES2015 generators*, you must provide a valid polyfill, such as [the one provided by `babel`](https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.25/browser-polyfill.min.js). The polyfill must be imported before **redux-saga**:
@@ -134,72 +129,4 @@ The following builds are available:
 import 'babel-polyfill'
 // then
 import sagaMiddleware from 'redux-saga'
-```
-
-# Building examples from sources
-
-```sh
-$ git clone https://github.com/yelouafi/redux-saga.git
-$ cd redux-saga
-$ npm install
-$ npm test
-```
-
-Below are the examples ported (so far) from the Redux repos.
-
-### Counter examples
-
-There are three counter examples.
-
-#### counter-vanilla
-
-Demo using vanilla JavaScript and UMD builds. All source is inlined in `index.html`.
-
-To launch the example, just open `index.html` in your browser.
-
-> Important: your browser must support Generators. Latest versions of Chrome/Firefox/Edge are suitable.
-
-#### counter
-
-Demo using `webpack` and high-level API `takeEvery`.
-
-```sh
-$ npm run counter
-
-# test sample for the generator
-$ npm run test-counter
-```
-
-#### cancellable-counter
-
-Demo using low-level API to demonstrate task cancellation.
-
-```sh
-$ npm run cancellable-counter
-```
-
-### Shopping Cart example
-
-```sh
-$ npm run shop
-
-# test sample for the generator
-$ npm run test-shop
-```
-
-### async example
-
-```sh
-$ npm run async
-
-# test sample for the generators
-$ npm run test-async
-```
-
-### real-world example (with webpack hot reloading)
-
-```sh
-$ npm run real-world
-
-# sorry, no tests yet
 ```
