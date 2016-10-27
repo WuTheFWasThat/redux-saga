@@ -1,7 +1,7 @@
-import { noop, kTrue, is, log as _log, check, deferred, autoInc, remove, TASK, CANCEL, makeIterator } from './utils'
+import { noop, is, log as _log, check, deferred, autoInc, remove, TASK, CANCEL, makeIterator } from './utils'
 import asap from './asap'
 import { asEffect } from './io'
-import { stdChannel as _stdChannel, isEnd } from './channel'
+import { isEnd } from './channel'
 
 const isDev = process.env.NODE_ENV === 'development'
 
@@ -10,21 +10,6 @@ export const NOT_ITERATOR_ERROR = 'proc first argument (Saga function result) mu
 const nextEffectId = autoInc()
 export const CHANNEL_END = {toString() { return '@@redux-saga/CHANNEL_END' }}
 export const TASK_CANCEL = {toString() { return '@@redux-saga/TASK_CANCEL' }}
-
-const matchers = {
-  wildcard  : () => kTrue,
-  array     : patterns => input => patterns.some(p => p === input.type),
-  predicate : predicate => input => predicate(input)
-}
-
-function matcher(pattern) {
-  return (
-      pattern === '*'   ? matchers.wildcard
-    : is.array(pattern) ? matchers.array
-    : is.func(pattern)  ? matchers.predicate
-    : matchers.default
-  )(pattern)
-}
 
 /**
   Used to track a parent task and its forks
@@ -132,15 +117,8 @@ function createTaskIterator({context, fn, args}) {
       })())
 }
 
-function wrapHelper(helper) {
-  return {
-    fn: helper
-  }
-}
-
 export default function proc(
   iterator,
-  subscribe = () => noop,
   options = {},
   parentEffectId = 0,
   name = 'anonymous',
@@ -150,7 +128,6 @@ export default function proc(
 
   const {sagaMonitor, logger, onError} = options
   const log = logger || _log
-  const stdChannel = _stdChannel(subscribe)
   /**
     Tracks the current effect cancellation
     Each time the generator progresses. calling runEffect will set a new value
@@ -274,7 +251,6 @@ export default function proc(
 
   function end(result, isErr) {
     iterator._isRunning = false
-    stdChannel.close()
     if(!isErr) {
       if(result === TASK_CANCEL && isDev) {
         log('info', `${name} has been cancelled`, '')
@@ -372,7 +348,7 @@ export default function proc(
     return (
       // Non declarative effect
         is.promise(effect)                                   ? resolvePromise(effect, currCb)
-      : is.helper(effect)                                    ? runForkEffect(wrapHelper(effect), effectId, currCb)
+      : is.helper(effect)                                    ? runForkEffect({fn: effect}, effectId, currCb)
       : is.iterator(effect)                                  ? resolveIterator(effect, effectId, name, currCb)
 
 
@@ -403,18 +379,17 @@ export default function proc(
   }
 
   function resolveIterator(iterator, effectId, name, cb) {
-    proc(iterator, subscribe, options, effectId, name, cb)
+    proc(iterator, options, effectId, name, cb)
   }
 
   function runTakeEffect({channel, pattern, maybe}, cb) {
-    channel = channel || stdChannel
     const takeCb = inp => (
         inp instanceof Error  ? cb(inp, true)
       : isEnd(inp) && !maybe ? cb(CHANNEL_END)
       : cb(inp)
     )
     try {
-      channel.take(takeCb, matcher(pattern))
+      channel.take(takeCb, pattern)
     } catch(err) {
       return cb(err, true)
     }
@@ -456,7 +431,7 @@ export default function proc(
     const taskIterator = createTaskIterator({context, fn, args})
 
     asap.suspend()
-    const task = proc(taskIterator, subscribe, options, effectId, fn.name, (detached ? null : noop))
+    const task = proc(taskIterator, options, effectId, fn.name, (detached ? null : noop))
 
     if(detached) {
       cb(task)

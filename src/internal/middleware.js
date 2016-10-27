@@ -1,10 +1,7 @@
 import { is, check } from './utils'
 import proc from './proc'
-import {emitter} from './channel'
 
 export default function sagaRunnerFactory(options = {}) {
-  let runSagaDynamically
-
   if(is.func(options)) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('Saga Runner no longer accept Generator functions. Use sagaRunner.run instead');
@@ -32,31 +29,13 @@ export default function sagaRunnerFactory(options = {}) {
     throw new Error('`options.onerror` passed to the Saga Runner is not a function!')
   }
 
-  function sagaRunner(/* { dispatch, getState } */) {
-    runSagaDynamically = runSaga
-    const sagaEmitter = emitter()
-
-    function runSaga(saga, ...args) {
-      return proc(
-        saga(...args),
-        sagaEmitter.subscribe,
-        options,
-        0,
-        saga.name
-      )
-    }
-
-    return next => action => {
-      const result = next(action) // hit reducers
-      sagaEmitter.emit(action)
-      return result
-    }
-  }
-
-  sagaRunner.run = (saga, ...args) => {
+  return function runSaga(saga, ...args) {
     check(saga, is.func, 'sagaRunner.run(saga, ...args): saga argument must be a Generator function!')
-    return runSagaDynamically(saga, ...args)
+    return proc(
+      saga(...args),
+      options,
+      0,
+      saga.name
+    )
   }
-
-  return sagaRunner
 }
