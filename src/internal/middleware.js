@@ -32,7 +32,7 @@ export default function sagaRunnerFactory(options = {}) {
     throw new Error('`options.onerror` passed to the Saga Runner is not a function!')
   }
 
-  function sagaRunner({getState}) {
+  function sagaRunner(/* { dispatch, getState } */) {
     runSagaDynamically = runSaga
     const sagaEmitter = emitter()
 
@@ -40,7 +40,6 @@ export default function sagaRunnerFactory(options = {}) {
       return proc(
         saga(...args),
         sagaEmitter.subscribe,
-        getState,
         options,
         0,
         saga.name

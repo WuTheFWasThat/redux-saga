@@ -143,7 +143,6 @@ function wrapHelper(helper) {
 export default function proc(
   iterator,
   subscribe = () => noop,
-  getState = noop,
   options = {},
   parentEffectId = 0,
   name = 'anonymous',
@@ -388,7 +387,6 @@ export default function proc(
       : (is.notUndef(data = asEffect.fork(effect)))          ? runForkEffect(data, effectId, currCb)
       : (is.notUndef(data = asEffect.join(effect)))          ? runJoinEffect(data, currCb)
       : (is.notUndef(data = asEffect.cancel(effect)))        ? runCancelEffect(data, currCb)
-      : (is.notUndef(data = asEffect.select(effect)))        ? runSelectEffect(data, currCb)
       : (is.notUndef(data = asEffect.actionChannel(effect))) ? runChannelEffect(data, currCb)
       : (is.notUndef(data = asEffect.flush(effect)))         ? runFlushEffect(data, currCb)
       : (is.notUndef(data = asEffect.cancelled(effect)))     ? runCancelledEffect(data, currCb)
@@ -408,7 +406,7 @@ export default function proc(
   }
 
   function resolveIterator(iterator, effectId, name, cb) {
-    proc(iterator, subscribe, getState, options, effectId, name, cb)
+    proc(iterator, subscribe, options, effectId, name, cb)
   }
 
   function runTakeEffect({channel, pattern, maybe}, cb) {
@@ -461,7 +459,7 @@ export default function proc(
     const taskIterator = createTaskIterator({context, fn, args})
 
     asap.suspend()
-    const task = proc(taskIterator, subscribe, getState, options, effectId, fn.name, (detached ? null : noop))
+    const task = proc(taskIterator, subscribe, options, effectId, fn.name, (detached ? null : noop))
 
     if(detached) {
       cb(task)
@@ -579,15 +577,6 @@ export default function proc(
       }
       runEffect(effects[key], effectId, key, childCbs[key])
     })
-  }
-
-  function runSelectEffect({selector, args}, cb) {
-    try {
-      const state = selector(getState(), ...args)
-      cb(state)
-    } catch(error) {
-      cb(error, true)
-    }
   }
 
   function runChannelEffect({pattern, buffer}, cb) {
