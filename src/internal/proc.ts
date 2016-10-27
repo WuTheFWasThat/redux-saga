@@ -1,6 +1,7 @@
 import { noop, is, log as _log, check, deferred, autoInc, remove, TASK, CANCEL, makeIterator } from './utils'
 import { asEffect } from './io'
 import { isEnd } from './channel'
+import { Task } from './types'
 
 export const NOT_ITERATOR_ERROR = 'proc first argument (Saga function result) must be an iterator'
 
@@ -23,9 +24,6 @@ export const TASK_CANCEL = {toString() { return '@@saga/TASK_CANCEL' }}
  *  - It aborts if any uncaught error bubbles up from forks
  *  - If it completes, the return value is the one returned by the main task
  */
-
-// TODO
-type Task = any;
 
 function forkQueue(name, mainTask: Task, cb) {
   let tasks: Array<Task> = []
@@ -137,7 +135,22 @@ export default function proc(
    * to track the main flow (besides other forked tasks)
    */
   const task: Task = newTask(parentEffectId, name, iterator, cont)
-  const mainTask: Task = {name, cancel: cancelMain, isRunning: true}
+  const mainTask: Task = {
+    name,
+    // cancellation of the main task. We'll simply resume the Generator with a Cancel
+    cancel: () => {
+      if (mainTask.isRunning() && !mainTask.isCancelled()) {
+        mainTask.isCancelled = () => true
+        mainTask.isRunning = () => false
+        next(TASK_CANCEL) // tslint:disable-line no-use-before-declare
+      }
+    },
+    isRunning: () => true,
+    isCancelled: () => false,
+    done: new Promise(() => null),
+    result: () => { throw new Error('main task has no result') },
+    error: () => null,
+  }
   const taskQueue = forkQueue(name, mainTask, end)
 
   /*
@@ -147,7 +160,7 @@ export default function proc(
    */
   const next: any = (arg, isErr) => {
     // Preventive measure. If we end up here, then there is really something wrong
-    if (!mainTask.isRunning) {
+    if (!mainTask.isRunning()) {
       throw new Error('Trying to resume an already finished generator')
     }
 
@@ -163,7 +176,7 @@ export default function proc(
          * - By cancelling the parent task manually
          * - By joining a Cancelled task
          */
-        mainTask.isCancelled = true
+        mainTask.isCancelled = () => true
         // Cancels the current effect; this will propagate the cancellation down to any called tasks
         next.cancel()
         // If this Generator has a `return` method then invokes it
@@ -180,17 +193,17 @@ export default function proc(
         runEffect(result.value, parentEffectId, '', next)
       } else {
         // This Generator has ended, terminate the main task and notify the fork queue
-        mainTask.isMainRunning = false
         if (mainTask.cont) {
           mainTask.cont(result.value)
         }
       }
     } catch (error) {
-      if (mainTask.isCancelled) {
+      if (mainTask.isCancelled()) {
         log('error', `uncaught at ${name}`, error.message)
       }
-      mainTask.isMainRunning = false
-      mainTask.cont(error, true)
+      if (mainTask.cont) {
+        mainTask.cont(error, true)
+      }
     }
   }
   /*
@@ -233,7 +246,9 @@ export default function proc(
     if (task.cont) {
       task.cont(result, isErr)
     }
-    task.joiners.forEach(j => j.cb(result, isErr))
+    if (task.joiners != null) { // note: should never be null
+      task.joiners.forEach(j => j.cb(result, isErr))
+    }
     task.joiners = null
   }
 
@@ -518,7 +533,7 @@ export default function proc(
   }
 
   function runCancelledEffect(data, cb) {
-    cb(!!mainTask.isCancelled)
+    cb(mainTask.isCancelled())
   }
 
   function runFlushEffect(channel, cb) {
@@ -551,14 +566,6 @@ export default function proc(
       isAborted: () => iterator2._isAborted,
       result: () => iterator2._result,
       error: () => iterator2._error,
-    }
-  }
-
-  // cancellation of the main task. We'll simply resume the Generator with a Cancel
-  function cancelMain() {
-    if (mainTask.isRunning && !mainTask.isCancelled) {
-      mainTask.isCancelled = true
-      next(TASK_CANCEL)
     }
   }
 
