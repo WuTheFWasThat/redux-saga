@@ -1,5 +1,11 @@
 # THIS IS A WIP.  DONT USE IT YET
 
+# TODO
+- write tests
+- make run effect?
+- make sagas pause/resumable? (generalizing cancelable)
+
+
 # saga
 
 [![Join the chat at https://gitter.im/wuthefwasthat/saga](https://badges.gitter.im/wuthefwasthat/saga.svg)](https://gitter.im/wuthefwasthat/saga?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![npm version](https://img.shields.io/npm/v/redux-saga.svg?style=flat-square)](https://www.npmjs.com/package/redux-saga)

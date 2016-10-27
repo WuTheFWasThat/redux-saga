@@ -6,7 +6,7 @@
   "jsnext:main": "es/index.js",
   "scripts": {
     "lint": "tslint --exclude 'node_modules/**/*' '**/*.ts' && eslint --ignore-path .gitignore --ignore-pattern 'test/**/*' .",
-    "test": "ts-node test.ts",
+    "test": "ts-node test.ts | tap-spec",
     "test_old": "cross-env BABEL_ENV=cjs babel-node test/index.js | tap-spec",
     "check": "npm run lint && npm run test",
     "compile": "rimraf lib && cross-env BABEL_ENV=cjs babel -d lib/ src/",
@@ -38,6 +38,7 @@
   },
   "homepage": "https://github.com/wuthefwasthat/saga#readme",
   "devDependencies": {
+    "@types/tape": "^4.2.28",
     "awesome-typescript-loader": "^2.2.4",
     "babel-cli": "^6.1.18",
     "babel-core": "^6.14.0",
