@@ -2,39 +2,37 @@ import { is, check } from './utils'
 import proc from './proc'
 import {emitter} from './channel'
 
-
-
-export default function sagaMiddlewareFactory(options = {}) {
+export default function sagaRunnerFactory(options = {}) {
   let runSagaDynamically
 
   if(is.func(options)) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('Saga middleware no longer accept Generator functions. Use sagaMiddleware.run instead');
+      throw new Error('Saga Runner no longer accept Generator functions. Use sagaRunner.run instead');
     } else {
-      throw new Error(`You passed a function to the Saga middleware. You are likely trying to start a\
-        Saga by directly passing it to the middleware. This is no longer possible starting from 0.10.0.\
-        To run a Saga, you must do it dynamically AFTER mounting the middleware into the store.
+      throw new Error(`You passed a function to the Saga Runner. You are likely trying to start a\
+        Saga by directly passing it to the Runner. This is no longer possible starting from 0.10.0.\
+        To run a Saga, you must do it dynamically AFTER mounting the Runner into the store.
         Example:
-          import createSagaMiddleware from 'redux-saga'
+          import createSagaRunner from 'redux-saga'
           ... other imports
 
-          const sagaMiddleware = createSagaMiddleware()
-          const store = createStore(reducer, applyMiddleware(sagaMiddleware))
-          sagaMiddleware.run(saga, ...args)
+          const sagaRunner = createSagaRunner()
+          const store = createStore(reducer, applyRunner(sagaRunner))
+          sagaRunner.run(saga, ...args)
       `)
     }
 
   }
 
   if(options.logger && !is.func(options.logger)) {
-    throw new Error('`options.logger` passed to the Saga middleware is not a function!')
+    throw new Error('`options.logger` passed to the Saga Runner is not a function!')
   }
 
   if(options.onerror && !is.func(options.onerror)) {
-    throw new Error('`options.onerror` passed to the Saga middleware is not a function!')
+    throw new Error('`options.onerror` passed to the Saga Runner is not a function!')
   }
 
-  function sagaMiddleware({getState, dispatch}) {
+  function sagaRunner({getState}) {
     runSagaDynamically = runSaga
     const sagaEmitter = emitter()
 
@@ -42,7 +40,6 @@ export default function sagaMiddlewareFactory(options = {}) {
       return proc(
         saga(...args),
         sagaEmitter.subscribe,
-        dispatch,
         getState,
         options,
         0,
@@ -57,11 +54,10 @@ export default function sagaMiddlewareFactory(options = {}) {
     }
   }
 
-  sagaMiddleware.run = (saga, ...args) => {
-    check(runSagaDynamically, is.notUndef, 'Before running a Saga, you must mount the Saga middleware on the Store using applyMiddleware')
-    check(saga, is.func, 'sagaMiddleware.run(saga, ...args): saga argument must be a Generator function!')
+  sagaRunner.run = (saga, ...args) => {
+    check(saga, is.func, 'sagaRunner.run(saga, ...args): saga argument must be a Generator function!')
     return runSagaDynamically(saga, ...args)
   }
 
-  return sagaMiddleware
+  return sagaRunner
 }

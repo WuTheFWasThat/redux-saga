@@ -143,7 +143,6 @@ function wrapHelper(helper) {
 export default function proc(
   iterator,
   subscribe = () => noop,
-  dispatch = noop,
   getState = noop,
   options = {},
   parentEffectId = 0,
@@ -383,7 +382,6 @@ export default function proc(
       // declarative effects
       : is.array(effect)                                     ? runParallelEffect(effect, effectId, currCb)
       : (is.notUndef(data = asEffect.take(effect)))          ? runTakeEffect(data, currCb)
-      : (is.notUndef(data = asEffect.put(effect)))           ? runPutEffect(data, currCb)
       : (is.notUndef(data = asEffect.race(effect)))          ? runRaceEffect(data, effectId, currCb)
       : (is.notUndef(data = asEffect.call(effect)))          ? runCallEffect(data, effectId, currCb)
       : (is.notUndef(data = asEffect.cps(effect)))           ? runCPSEffect(data, currCb)
@@ -410,7 +408,7 @@ export default function proc(
   }
 
   function resolveIterator(iterator, effectId, name, cb) {
-    proc(iterator, subscribe, dispatch, getState, options, effectId, name, cb)
+    proc(iterator, subscribe, getState, options, effectId, name, cb)
   }
 
   function runTakeEffect({channel, pattern, maybe}, cb) {
@@ -426,32 +424,6 @@ export default function proc(
       return cb(err, true)
     }
     cb.cancel = takeCb.cancel
-  }
-
-  function runPutEffect({channel, action, sync}, cb) {
-    /*
-      Use a reentrant lock `asap` to flatten all nested dispatches
-      If this put cause another Saga to take this action an then immediately
-      put an action that will be taken by this Saga. Then the outer Saga will miss
-      the action from the inner Saga b/c this put has not yet returned.
-    */
-    asap(() => {
-      let result
-      try {
-        result = (channel ? channel.put : dispatch)(action)
-      } catch(error) {
-        // If we have a channel or `put.sync` was used then bubble up the error.
-        if (channel || sync) return cb(error, true)
-        log('error', `uncaught at ${name}`, error.stack || error.message || error)
-      }
-
-      if(sync && is.promise(result)) {
-        resolvePromise(result, cb)
-      } else {
-        return cb(result)
-      }
-    })
-    // Put effects are non cancellables
   }
 
   function runCallEffect({context, fn, args}, effectId, cb) {
@@ -489,7 +461,7 @@ export default function proc(
     const taskIterator = createTaskIterator({context, fn, args})
 
     asap.suspend()
-    const task = proc(taskIterator, subscribe, dispatch, getState, options, effectId, fn.name, (detached ? null : noop))
+    const task = proc(taskIterator, subscribe, getState, options, effectId, fn.name, (detached ? null : noop))
 
     if(detached) {
       cb(task)
