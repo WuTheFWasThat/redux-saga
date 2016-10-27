@@ -1,3 +1,5 @@
+import { Predicate } from './types'
+
 export const sym = id => `@@saga/${id}`
 export const TASK  = sym('TASK')
 export const HELPER  = sym('HELPER')
@@ -6,7 +8,7 @@ export const CANCEL = sym('cancelPromise')
 export const konst = v => () => v
 export const kTrue = konst(true)
 export const kFalse = konst(false)
-export const noop = () => {} // tslint:disable-line no-empty
+export const noop = (): void => {} // tslint:disable-line no-empty
 export const ident = v => v
 
 export function check(value, predicate, error) {
@@ -16,7 +18,22 @@ export function check(value, predicate, error) {
   }
 }
 
-export const is = {
+type isType = {
+  undef: Predicate<any>
+  notUndef: Predicate<any>
+  func: Predicate<any>
+  number: Predicate<any>
+  array: Predicate<any>
+  promise: Predicate<any>
+  iterator: Predicate<any>
+  task: Predicate<any>
+  observable: Predicate<any>
+  buffer: Predicate<any>
+  channel: Predicate<any>
+  helper: Predicate<any>
+  pattern: Predicate<any>
+}
+export const is: isType = {
   undef     : v => v === null || v === undefined,
   notUndef  : v => v !== null && v !== undefined,
   func      : f => typeof f === 'function',
@@ -39,19 +56,27 @@ export function remove(array, item) {
   }
 }
 
-type Deferred = any;
-export function deferred() {
-  let def: Deferred = {}
+interface Deferred<R> {
+  resolve(result: R): void;
+  reject(error: any): void;
+  promise: Promise<R>; // tslint:disable-line member-ordering
+}
+export function deferred(): Deferred<any> {
+  let def_resolve;
+  let def_reject;
   const promise = new Promise((resolve, reject) => {
-    def.resolve = resolve
-    def.reject = reject
+    def_resolve = resolve
+    def_reject = reject
   })
-  def.promise = promise
-  return def
+  return {
+    promise,
+    resolve: def_resolve,
+    reject: def_reject,
+  }
 }
 
-export function arrayOfDeffered(length) {
-  const arr: Array<Deferred> = []
+export function arrayOfDeffered<T>(length: number): Deferred<T>[] {
+  const arr: Deferred<T>[] = []
   for (let i = 0; i < length; i++) {
     arr.push(deferred())
   }

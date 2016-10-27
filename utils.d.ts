@@ -2,28 +2,7 @@ import {
   Effect, TakeEffectDescriptor,
   RaceEffectDescriptor, CallEffectDescriptor, ForkEffectDescriptor,
 } from './effects';
-import {Predicate, Task} from './types';
 
-
-export const TASK: string;
-
-export function noop(): void;
-
-export const is: {
-  undef: Predicate<any>;
-  notUndef: Predicate<any>;
-  func: Predicate<any>;
-  number: Predicate<any>;
-  array: Predicate<any>;
-  promise: Predicate<any>;
-  iterator: Predicate<any>;
-  task: Predicate<any>;
-  take: Predicate<any>;
-  put: Predicate<any>;
-  observable: Predicate<any>;
-  buffer: Predicate<any>;
-  pattern: Predicate<any>;
-};
 
 interface Deferred<R> {
   resolve(result: R): void;
