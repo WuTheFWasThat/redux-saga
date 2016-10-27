@@ -1,9 +1,13 @@
 import { is, check, remove, MATCH, internalErr } from './utils'
 import { buffers } from './buffers'
+import { Buffer, Channel } from './types'
 
 const CHANNEL_END_TYPE = '@@saga/CHANNEL_END'
 export const END = {type: CHANNEL_END_TYPE}
 export const isEnd = a => a && a.type === CHANNEL_END_TYPE
+
+type Unsubscribe = () => void;
+type Subscribe<T> = (cb: (input: T) => void) => Unsubscribe;
 
 export function emitter() {
   const subscribers: Array<(item: any) => any> = []
@@ -29,7 +33,7 @@ export function emitter() {
 export const INVALID_BUFFER = 'invalid buffer passed to channel factory function'
 export const UNDEFINED_INPUT_ERROR = 'Saga was provided with an undefined action'
 
-export function channel(buffer = buffers.fixed()) {
+export function channel<T>(buffer: Buffer<T> = buffers.fixed<T>()): Channel<T> {
   let closed = false
   let takers: Array<(item: any) => any> = []
 
@@ -100,42 +104,9 @@ export function channel(buffer = buffers.fixed()) {
     }
   }
 
-  return {take, put, flush, close,
+  return {
+    take, put, flush, close,
     get __takers__() { return takers },
     get __closed__() { return closed },
-  }
-}
-
-export function eventChannel(subscribe, buffer = buffers.none(), matcher) {
-  /*
-   * should be if(typeof matcher !== undefined) instead?
-   * see PR #273 for a background discussion
-   */
-  if (arguments.length > 2) {
-    check(matcher, is.func, 'Invalid match function passed to eventChannel')
-  }
-
-  const chan = channel(buffer as any)
-  const unsubscribe = subscribe(input => {
-    if (isEnd(input)) {
-      chan.close()
-    } else if (!matcher || matcher(input)) {
-      chan.put(input)
-    }
-  })
-
-  if (!is.func(unsubscribe)) {
-    throw new Error('in eventChannel: subscribe should return a function to unsubscribe')
-  }
-
-  return {
-    take: chan.take,
-    flush: chan.flush,
-    close: () => {
-      if (!chan.__closed__) {
-        chan.close()
-        unsubscribe()
-      }
-    },
   }
 }

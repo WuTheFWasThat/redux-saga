@@ -1,4 +1,5 @@
 import { kTrue, noop } from './utils'
+import { Buffer } from './types';
 
 export const BUFFER_OVERFLOW = 'Channel\'s Buffer overflow!'
 
@@ -77,7 +78,15 @@ function ringBuffer(limit = 10, overflowAction: null | number = null) {
   }
 }
 
-export const buffers = {
+export type Buffers = {
+  none<T>(): Buffer<T>
+  fixed<T>(limit?: number): Buffer<T>
+  dropping<T>(limit?: number): Buffer<T>
+  sliding<T>(limit?: number): Buffer<T>
+  expanding<T>(limit?: number): Buffer<T>
+};
+
+export const buffers: Buffers = {
   none: () => zeroBuffer,
   fixed: (limit?) => ringBuffer(limit, ON_OVERFLOW_THROW),
   dropping: limit => ringBuffer(limit, ON_OVERFLOW_DROP),

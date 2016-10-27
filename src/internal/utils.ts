@@ -83,17 +83,6 @@ export function arrayOfDeffered<T>(length: number): Deferred<T>[] {
   return arr
 }
 
-export function delay(ms, val = true) {
-  let timeoutId
-  const promise = new Promise(resolve => {
-    timeoutId = setTimeout(() => resolve(val), ms)
-  })
-
-  promise[CANCEL] = () => clearTimeout(timeoutId)
-
-  return promise
-}
-
 export function autoInc(seed = 0) {
   return () => ++seed
 }
