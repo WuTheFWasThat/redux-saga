@@ -177,7 +177,7 @@ export default function proc(
       }
 
       if (!result.done) {
-         runEffect(result.value, parentEffectId, '', next)
+        runEffect(result.value, parentEffectId, '', next)
       } else {
         // This Generator has ended, terminate the main task and notify the fork queue
         mainTask.isMainRunning = false
@@ -362,7 +362,8 @@ export default function proc(
     cb.cancel = takeCb.cancel
   }
 
-  function runCallEffect({context, fn, args}, effectId, cb) {
+  function runCallEffect(opts, effectId, cb) {
+    const {context, fn, args} = opts
     let result
     // catch synchronous failures; see #152
     try {
@@ -529,7 +530,7 @@ export default function proc(
     return {
       [TASK]: true,
       id,
-      name2,
+      name: name2,
       get done() {
         if (iterator2._deferredEnd) {
           return iterator2._deferredEnd.promise
@@ -542,7 +543,7 @@ export default function proc(
           return def.promise
         }
       },
-      cont2,
+      cont: cont2,
       joiners: ([] as Array<any> | null),
       cancel,
       isRunning: () => iterator2._isRunning,
