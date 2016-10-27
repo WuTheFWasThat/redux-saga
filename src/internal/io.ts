@@ -102,7 +102,7 @@ export const call: CallEffectFactory<CallEffect> = (fn, ...args) => {
   return effectObj(CALL, getFnCallDesc('call', fn, args))
 }
 
-export function apply(context, fn, args): CallEffect {
+export function apply(context, fn, args = []): CallEffect {
   return effectObj(CALL, getFnCallDesc('apply', {context, fn}, args))
 }
 
