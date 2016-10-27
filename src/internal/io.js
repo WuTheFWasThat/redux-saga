@@ -1,15 +1,13 @@
-import { sym, is, ident, check, TASK } from './utils'
+import { sym, is, check, TASK } from './utils'
 
 const IO      = sym('IO')
 const TAKE    = 'TAKE'
-const PUT     = 'PUT'
 const RACE    = 'RACE'
 const CALL    = 'CALL'
 const CPS     = 'CPS'
 const FORK    = 'FORK'
 const JOIN    = 'JOIN'
 const CANCEL  = 'CANCEL'
-const SELECT  = 'SELECT'
 const ACTION_CHANNEL = 'ACTION_CHANNEL'
 const CANCELLED  = 'CANCELLED'
 const FLUSH  = 'FLUSH'
@@ -24,25 +22,6 @@ export function take(channel = '*') {
     return effect(TAKE, { channel })
   }
   throw new Error(`take(channel): argument ${String(channel)} is not valid channel or a valid pattern`)
-}
-
-export function put(channel, action) {
-  if(arguments.length > 1) {
-    check(channel, is.notUndef, 'put(channel, action): argument channel is undefined')
-    check(channel, is.channel, `put(channel, action): argument ${channel} is not a valid channel`)
-    check(action, is.notUndef, 'put(channel, action): argument action is undefined')
-  } else {
-    check(channel, is.notUndef, 'put(action): argument action is undefined')
-    action = channel
-    channel = null
-  }
-  return effect(PUT, {channel, action})
-}
-
-put.sync = (...args) => {
-  const eff = put(...args)
-  eff[PUT].sync = true
-  return eff
 }
 
 export function race(effects) {
@@ -105,16 +84,6 @@ export function cancel(task) {
   return effect(CANCEL, task)
 }
 
-export function select(selector, ...args) {
-  if(arguments.length === 0) {
-    selector = ident
-  } else {
-    check(selector, is.notUndef, 'select(selector,[...]): argument selector is undefined')
-    check(selector, is.func, `select(selector,[...]): argument ${selector} is not a function`)
-  }
-  return effect(SELECT, {selector, args})
-}
-
 /**
   channel(pattern, [buffer])    => creates an event channel for store actions
 **/
@@ -138,14 +107,12 @@ export function flush(channel) {
 
 export const asEffect = {
   take    : effect => effect && effect[IO] && effect[TAKE],
-  put     : effect => effect && effect[IO] && effect[PUT],
   race    : effect => effect && effect[IO] && effect[RACE],
   call    : effect => effect && effect[IO] && effect[CALL],
   cps     : effect => effect && effect[IO] && effect[CPS],
   fork    : effect => effect && effect[IO] && effect[FORK],
   join    : effect => effect && effect[IO] && effect[JOIN],
   cancel  : effect => effect && effect[IO] && effect[CANCEL],
-  select  : effect => effect && effect[IO] && effect[SELECT],
   actionChannel : effect => effect && effect[IO] && effect[ACTION_CHANNEL],
   cancelled  : effect => effect && effect[IO] && effect[CANCELLED],
   flush  : effect => effect && effect[IO] && effect[FLUSH]

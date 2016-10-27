@@ -17,18 +17,6 @@ interface TakeEffect<T> {
 export function take<T>(channel: Channel<T>,
                         pattern?: Pattern<T>): TakeEffect<T>;
 
-interface PutEffectDescriptor<T> {
-  action: T;
-  channel: Channel<T>;
-}
-
-interface PutEffect<T> {
-  PUT: PutEffectDescriptor<T>;
-}
-
-export function put<T extends Action>(action: T): PutEffect<T>;
-export function put<T>(channel: Channel<T>, action: T): PutEffect<T>;
-
 
 type RaceEffectDescriptor = {[key: string]: Effect};
 
@@ -138,28 +126,6 @@ interface CancelEffect {
 export function cancel(task: Task): CancelEffect;
 
 
-interface SelectEffectDescriptor {
-  selector(state: any, ...args: any[]): any;
-  args: any[];
-}
-
-interface SelectEffect {
-  SELECT: SelectEffectDescriptor;
-}
-
-export function select(): SelectEffect;
-export function select<S>(selector: CallFunc1<S>): SelectEffect;
-export function select<S, T1>(selector: CallFunc2<S, T1>,
-                              arg1: T1): SelectEffect;
-export function select<S, T1, T2>(selector: CallFunc3<S, T1, T2>,
-                              arg1: T1, arg2: T2): SelectEffect;
-export function select<S, T1, T2, T3>(selector: CallFunc4<S, T1, T2, T3>,
-                              arg1: T1, arg2: T2, arg3: T3): SelectEffect;
-export function select<S, T1, T2, T3, T4>(
-  selector: CallFunc5<S, T1, T2, T3, T4>,
-  arg1: T1, arg2: T2, arg3: T3, arg4: T4): SelectEffect;
-
-
 interface ActionChannelEffectDescriptor<T> {
   pattern: Pattern<T>;
   buffer: Buffer<T>;
@@ -182,7 +148,6 @@ export function cancelled(): CancelledEffect;
 
 export type Effect =
   TakeEffect<any> |
-  PutEffect<any> |
   RaceEffect | CallEffect |
-  CpsEffect | ForkEffect | JoinEffect | CancelEffect | SelectEffect |
+  CpsEffect | ForkEffect | JoinEffect | CancelEffect  |
   ActionChannelEffect<any> | CancelledEffect;
