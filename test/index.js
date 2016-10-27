@@ -20,4 +20,3 @@ import './proc/flush'
 import './channel'
 import './channel-recipes'
 import './proc/takeSync'
-import './typescript';

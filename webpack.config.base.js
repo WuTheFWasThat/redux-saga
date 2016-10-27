@@ -1,13 +1,21 @@
 'use strict';
 
 module.exports = {
+  entry: [
+    './src/index.ts',
+  ],
   module: {
     loaders: [
       {
-        test: /\.js$/,
-        loaders: ['babel-loader'],
-        exclude: /node_modules/
-      }
+        test: /\.jsx?$/,
+        loaders: ['babel', 'eslint-loader'],
+      },
+      {
+        test: /\.tsx?$/,
+        loaders: [
+          'babel', 'awesome-typescript-loader', 'tslint',
+        ],
+      },
     ]
   },
   output: {
@@ -15,6 +23,14 @@ module.exports = {
     libraryTarget: 'umd'
   },
   resolve: {
-    extensions: ['', '.js']
-  }
+    extensions: ['', '.ts', '.js'],
+  },
+  tslint: {
+    emitErrors: true,
+    failOnHint: false
+  },
+  eslint: {
+    configFile: '.eslintrc'
+  },
 };
+
