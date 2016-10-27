@@ -8,7 +8,12 @@ const ON_OVERFLOW_DROP = 2
 const ON_OVERFLOW_SLIDE = 3
 const ON_OVERFLOW_EXPAND = 4
 
-const zeroBuffer = {isEmpty: kTrue, put: noop, take: noop}
+const zeroBuffer = {
+  isEmpty: kTrue,
+  put: noop,
+  take: noop,
+  flush: noop,
+}
 
 function ringBuffer(limit = 10, overflowAction: null | number = null) {
   let arr = new Array(limit)

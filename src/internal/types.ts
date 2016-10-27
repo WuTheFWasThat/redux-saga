@@ -19,7 +19,7 @@ export interface Buffer<T> {
 
 export interface Channel<T> {
   take(cb: (message: T) => void, matcher?: Predicate<T>): void
-  put?(message: T): void
+  put(message: T): void
   close(): void
   [others: string]: any
 }
