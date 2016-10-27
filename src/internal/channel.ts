@@ -6,7 +6,7 @@ export const END = {type: CHANNEL_END_TYPE}
 export const isEnd = a => a && a.type === CHANNEL_END_TYPE
 
 export function emitter() {
-  const subscribers = []
+  const subscribers: Array<(item: any) => any> = []
 
   function subscribe(sub) {
     subscribers.push(sub)
@@ -15,14 +15,14 @@ export function emitter() {
 
   function emit(item) {
     const arr = subscribers.slice()
-    for (var i = 0, len =  arr.length; i < len; i++) {
+    for (let i = 0, len =  arr.length; i < len; i++) {
       arr[i](item)
     }
   }
 
   return {
     subscribe,
-    emit
+    emit,
   }
 }
 
@@ -31,15 +31,15 @@ export const UNDEFINED_INPUT_ERROR = 'Saga was provided with an undefined action
 
 export function channel(buffer = buffers.fixed()) {
   let closed = false
-  let takers = []
+  let takers: Array<(item: any) => any> = []
 
   check(buffer, is.buffer, INVALID_BUFFER)
 
   function checkForbiddenStates() {
-    if(closed && takers.length) {
+    if (closed && takers.length) {
       throw internalErr('Cannot have a closed channel with pending takers')
     }
-    if(takers.length && !buffer.isEmpty()) {
+    if (takers.length && !buffer.isEmpty()) {
       throw internalErr('Cannot have pending takers with non empty buffer')
     }
   }
@@ -53,9 +53,9 @@ export function channel(buffer = buffers.fixed()) {
     if (!takers.length) {
       return buffer.put(input)
     }
-    for (var i = 0; i < takers.length; i++) {
+    for (let i = 0; i < takers.length; i++) {
       const cb = takers[i]
-      if(!cb[MATCH] || cb[MATCH](input)) {
+      if (!cb[MATCH] || cb[MATCH](input)) {
         takers.splice(i, 1)
         return cb(input)
       }
@@ -66,9 +66,9 @@ export function channel(buffer = buffers.fixed()) {
     checkForbiddenStates()
     check(cb, is.func, 'channel.take\'s callback must be a function')
 
-    if(closed && buffer.isEmpty()) {
+    if (closed && buffer.isEmpty()) {
       cb(END)
-    } else if(!buffer.isEmpty()) {
+    } else if (!buffer.isEmpty()) {
       cb(buffer.take())
     } else {
       takers.push(cb)
@@ -88,9 +88,9 @@ export function channel(buffer = buffers.fixed()) {
 
   function close() {
     checkForbiddenStates()
-    if(!closed) {
+    if (!closed) {
       closed = true
-      if(takers.length) {
+      if (takers.length) {
         const arr = takers
         takers = []
         for (let i = 0, len = arr.length; i < len; i++) {
@@ -102,29 +102,29 @@ export function channel(buffer = buffers.fixed()) {
 
   return {take, put, flush, close,
     get __takers__() { return takers },
-    get __closed__() { return closed }
+    get __closed__() { return closed },
   }
 }
 
 export function eventChannel(subscribe, buffer = buffers.none(), matcher) {
-  /**
-    should be if(typeof matcher !== undefined) instead?
-    see PR #273 for a background discussion
-  **/
-  if(arguments.length > 2) {
+  /*
+   * should be if(typeof matcher !== undefined) instead?
+   * see PR #273 for a background discussion
+   */
+  if (arguments.length > 2) {
     check(matcher, is.func, 'Invalid match function passed to eventChannel')
   }
 
   const chan = channel(buffer)
   const unsubscribe = subscribe(input => {
-    if(isEnd(input)) {
+    if (isEnd(input)) {
       chan.close()
-    } else if(!matcher || matcher(input)) {
+    } else if (!matcher || matcher(input)) {
       chan.put(input)
     }
   })
 
-  if(!is.func(unsubscribe)) {
+  if (!is.func(unsubscribe)) {
     throw new Error('in eventChannel: subscribe should return a function to unsubscribe')
   }
 
@@ -132,25 +132,10 @@ export function eventChannel(subscribe, buffer = buffers.none(), matcher) {
     take: chan.take,
     flush: chan.flush,
     close: () => {
-      if(!chan.__closed__) {
+      if (!chan.__closed__) {
         chan.close()
         unsubscribe()
       }
-    }
-  }
-}
-
-export function stdChannel(subscribe) {
-  const chan = eventChannel(subscribe)
-
-  return {
-    ...chan,
-    take(cb, matcher) {
-      if(arguments.length > 1) {
-        check(matcher, is.func, 'channel.take\'s matcher argument must be a function')
-        cb[MATCH] = matcher
-      }
-      chan.take(cb)
-    }
+    },
   }
 }

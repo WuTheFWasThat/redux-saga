@@ -9,7 +9,7 @@ const ON_OVERFLOW_EXPAND = 4
 
 const zeroBuffer = {isEmpty: kTrue, put: noop, take: noop}
 
-function ringBuffer(limit = 10, overflowAction) {
+function ringBuffer(limit = 10, overflowAction: null | number = null) {
   let arr = new Array(limit)
   let length = 0
   let pushIndex = 0
@@ -22,7 +22,7 @@ function ringBuffer(limit = 10, overflowAction) {
   }
 
   const take = () => {
-    if (length != 0) {
+    if (length !== 0) {
       let it = arr[popIndex]
       arr[popIndex] = null
       length--
@@ -32,7 +32,7 @@ function ringBuffer(limit = 10, overflowAction) {
   }
 
   const flush = () => {
-    let items = []
+    let items: Array<any> = []
     while (length) {
       items.push(take())
     }
@@ -40,13 +40,13 @@ function ringBuffer(limit = 10, overflowAction) {
   }
 
   return {
-    isEmpty: () => length == 0,
+    isEmpty: () => length === 0,
     put: it => {
-      if(length < limit) {
+      if (length < limit) {
         push(it)
       } else {
         let doubledLimit
-        switch(overflowAction) {
+        switch (overflowAction) {
           case ON_OVERFLOW_THROW:
             throw new Error(BUFFER_OVERFLOW)
           case ON_OVERFLOW_SLIDE:
@@ -73,14 +73,14 @@ function ringBuffer(limit = 10, overflowAction) {
         }
       }
     },
-    take, flush
+    take, flush,
   }
 }
 
 export const buffers = {
   none: () => zeroBuffer,
-  fixed: limit => ringBuffer(limit, ON_OVERFLOW_THROW),
+  fixed: (limit?) => ringBuffer(limit, ON_OVERFLOW_THROW),
   dropping: limit => ringBuffer(limit, ON_OVERFLOW_DROP),
   sliding: limit => ringBuffer(limit, ON_OVERFLOW_SLIDE),
-  expanding: initialSize => ringBuffer(initialSize, ON_OVERFLOW_EXPAND)
+  expanding: initialSize => ringBuffer(initialSize, ON_OVERFLOW_EXPAND),
 }

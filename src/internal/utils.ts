@@ -6,11 +6,11 @@ export const CANCEL = sym('cancelPromise')
 export const konst = v => () => v
 export const kTrue = konst(true)
 export const kFalse = konst(false)
-export const noop = () => {}
+export const noop = () => {} // tslint:disable-line no-empty
 export const ident = v => v
 
 export function check(value, predicate, error) {
-  if(!predicate(value)) {
+  if (!predicate(value)) {
     log('error', 'uncaught at check', error)
     throw new Error(error)
   }
@@ -29,18 +29,19 @@ export const is = {
   buffer    : buf => buf && is.func(buf.isEmpty) && is.func(buf.take) && is.func(buf.put),
   pattern   : pat => pat && ((typeof pat === 'string') || (typeof pat === 'symbol') || is.func(pat) || is.array(pat)),
   channel   : ch => ch && is.func(ch.take) && is.func(ch.close),
-  helper    : it => it && it[HELPER]
+  helper    : it => it && it[HELPER],
 }
 
 export function remove(array, item) {
   const index = array.indexOf(item)
-  if(index >= 0) {
+  if (index >= 0) {
     array.splice(index, 1)
   }
 }
 
-export function deferred(props = {}) {
-  let def = {...props}
+type Deferred = any;
+export function deferred() {
+  let def: Deferred = {}
   const promise = new Promise((resolve, reject) => {
     def.resolve = resolve
     def.reject = reject
@@ -50,14 +51,14 @@ export function deferred(props = {}) {
 }
 
 export function arrayOfDeffered(length) {
-  const arr = []
+  const arr: Array<Deferred> = []
   for (let i = 0; i < length; i++) {
     arr.push(deferred())
   }
   return arr
 }
 
-export function delay(ms, val=true) {
+export function delay(ms, val = true) {
   let timeoutId
   const promise = new Promise(resolve => {
     timeoutId = setTimeout(() => resolve(val), ms)
@@ -80,7 +81,7 @@ export function createMockTask() {
 
     setRunning : b => running = b,
     setResult  : r => result = r,
-    setError   : e => error = e
+    setError   : e => error = e,
   }
 }
 
@@ -90,27 +91,27 @@ export function autoInc(seed = 0) {
 
 const kThrow = err => { throw err }
 const kReturn = value => ({value, done: true})
-export function makeIterator(next, thro = kThrow, name = '', isHelper) {
+export function makeIterator(next, thro = kThrow, name = '', isHelper = false) {
   const iterator = {name, next, throw: thro, return: kReturn}
 
   if (isHelper) {
     iterator[HELPER] = true
   }
-  if(typeof Symbol !== 'undefined') {
+  if (typeof Symbol !== 'undefined') {
     iterator[Symbol.iterator] = () => iterator
   }
   return iterator
 }
 
-/**
-  Print error in a useful way whether in a browser environment
-  (with expandable error stack traces), or in a node.js environment
-  (text-only log output)
- **/
+/*
+ * Print error in a useful way whether in a browser environment
+ * (with expandable error stack traces), or in a node.js environment
+ * (text-only log output)
+ */
 export function log(level, message, error) {
   /*eslint-disable no-console*/
-  if(typeof window === 'undefined') {
-    console.log(`redux-saga ${level}: ${message}\n${(error && error.stack) || error}`)
+  if (typeof window === 'undefined') {
+    console.log(`saga ${level}: ${message}\n${(error && error.stack) || error}`) // tslint:disable-line no-console
   } else {
     console[level](message, error)
   }
