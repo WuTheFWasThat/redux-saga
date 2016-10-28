@@ -89,22 +89,26 @@ function fork(effect) {
   });
 }
 
-function timeout(ms) {
+function call(fn, ...args) {
   return run(function* () {
-    return yield join(new Promise(resolve => setTimeout(resolve, ms)));
+    return yield join(fn(...args));
   });
 }
 
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 export {
-  defer, runWait, join, run, runSaga, fork, timeout,
+  defer, join, run, runWait, call, runSaga, fork, timeout,
 };
 
 // example
 
 function* go() {
   const result = yield runWait(function* () {
-    yield fork(timeout(2000));
-    yield timeout(500);
+    yield fork(call(timeout, 2000));
+    yield call(timeout, 500);
     console.log('finishing');
 
     return 'hello';
@@ -116,14 +120,14 @@ function* go() {
 function* go2() {
   const result = yield runWait(function* () {
     yield fork(run(function*(arg) {
-      yield timeout(500);
+      yield call(timeout, 500);
       console.log('first timeout done', arg);
       yield fork(run(function*(arg2) {
-        yield timeout(500);
+        yield call(timeout, 500);
         console.log('second timeout done', arg, arg2);
       }, 2));
     }, 1));
-    yield timeout(500);
+    yield call(timeout, 500);
     console.log('finished outer timeout');
 
     return 'hello';
