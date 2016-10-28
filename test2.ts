@@ -32,7 +32,7 @@ function recurse(generator, deferred, instruction) {
   switch (cmd.kind) {
     case 'run':
       return execute((function* () {
-        const result = yield* cmd.saga();
+        const result = yield* cmd.saga(...cmd.args);
         return yield join(execute(generator, deferred, result));
       })(), deferred);
     case 'join':
@@ -53,14 +53,15 @@ function recurse(generator, deferred, instruction) {
 
 // effects
 
-function run(saga) {
+function run(saga, ...args) {
   return {
     kind: 'run',
     saga,
+    args,
   };
 }
 
-function call(saga, ...args) {
+function runWait(saga, ...args) {
   return run(function *() {
     return yield join(runSaga(saga, ...args));
   });
@@ -95,13 +96,13 @@ function timeout(ms) {
 }
 
 export {
-  defer, call, join, run, runSaga, fork, timeout,
+  defer, runWait, join, run, runSaga, fork, timeout,
 };
 
 // example
 
 function* go() {
-  const result = yield call(function* () {
+  const result = yield runWait(function* () {
     yield fork(timeout(2000));
     yield timeout(500);
     console.log('finishing');
@@ -113,15 +114,15 @@ function* go() {
 }
 
 function* go2() {
-  const result = yield call(function* () {
-    yield fork(run(function*() {
+  const result = yield runWait(function* () {
+    yield fork(run(function*(arg) {
       yield timeout(500);
-      console.log('first timeout done');
-      yield fork(run(function*() {
+      console.log('first timeout done', arg);
+      yield fork(run(function*(arg2) {
         yield timeout(500);
-        console.log('second timeout done');
-      }));
-    }));
+        console.log('second timeout done', arg, arg2);
+      }, 2));
+    }, 1));
     yield timeout(500);
     console.log('finished outer timeout');
 
