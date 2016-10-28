@@ -1,4 +1,28 @@
-function runSaga(saga, ...args) {
+enum EffectType {
+  RUN,
+  JOIN,
+  DEFER,
+}
+
+type RunEffect = {
+  kind: EffectType.RUN,
+  saga: Saga,
+  args: Array<any>,
+}
+type JoinEffect = {
+  kind: EffectType.JOIN,
+  promise: any,
+}
+type DeferEffect = {
+  kind: EffectType.DEFER,
+  effect: Effect,
+}
+type Effect = RunEffect | DeferEffect | JoinEffect;
+
+type EffectsIterator = IterableIterator<Effect>;
+type Saga = (...args: Array<any>) => EffectsIterator;
+
+function runSaga(saga: Saga, ...args) {
   const generator = saga(...args);
   return execute(generator, []);
 }
@@ -9,14 +33,18 @@ function* values(arr) {
   }
 }
 
-function execute(generator, deferred, inject = null) {
-  const next = generator.next(inject);
+function execute(
+  generator: EffectsIterator, deferred: Array<Effect>, passback = null
+) {
+  const next = generator.next(passback);
   return recurse(generator, deferred, next);
 }
 
 // takes instruction, (taken from generator)
 // returns promise of result
-function recurse(generator, deferred, instruction) {
+function recurse(
+  generator: EffectsIterator, deferred: Array<Effect>, instruction
+) {
   // console.log('recurse', generator, deferred, instruction);
   const { value: cmd, done } = instruction;
 
@@ -25,24 +53,27 @@ function recurse(generator, deferred, instruction) {
       deferred.reverse();
       return execute(values(deferred), []).then(() => cmd);
     } else {
-      return Promise.resolve(cmd);
+      return cmd;
     }
   }
 
   switch (cmd.kind) {
-    case 'run':
+    case EffectType.RUN:
       return execute((function* () {
         const result = yield* cmd.saga(...cmd.args);
         return yield join(execute(generator, deferred, result));
       })(), deferred);
-    case 'join':
-      return cmd.promise.then(result => {
-        return execute(generator, deferred, result);
-      }).catch(err => {
-        const next = generator.throw(err);
-        return recurse(generator, deferred, next);
-      });
-    case 'defer':
+    case EffectType.JOIN:
+      if (cmd.promise instanceof Promise) {
+        return cmd.promise.then(result => {
+          return execute(generator, deferred, result);
+        }).catch(err => {
+          const next = (generator as any).throw(err);
+          return recurse(generator, deferred, next);
+        });
+      }
+      return execute(generator, deferred, cmd.promise);
+    case EffectType.DEFER:
       deferred.push(cmd.effect);
       return execute(generator, deferred);
     default:
@@ -55,7 +86,7 @@ function recurse(generator, deferred, instruction) {
 
 function run(saga, ...args) {
   return {
-    kind: 'run',
+    kind: EffectType.RUN,
     saga,
     args,
   };
@@ -69,14 +100,14 @@ function runWait(saga, ...args) {
 
 function join(promise) {
   return {
-    kind: 'join',
+    kind: EffectType.JOIN,
     promise,
   };
 }
 
 function defer(effect) {
   return {
-    kind: 'defer',
+    kind: EffectType.DEFER,
     effect,
   };
 }
@@ -100,12 +131,14 @@ function timeout(ms) {
 }
 
 export {
-  defer, join, run, runWait, call, runSaga, fork, timeout,
+  defer, join, run, runWait, call, runSaga, fork,
 };
 
 // example
 
-function* go() {
+// tslint:disable no-console no-unused-variable
+
+function* go1() {
   const result = yield runWait(function* () {
     yield fork(call(timeout, 2000));
     yield call(timeout, 500);
@@ -136,5 +169,31 @@ function* go2() {
   console.log('done waiting', result);
 }
 
-runSaga(go2);
+function* go3() {
+  const result = yield run(function* () {
+    yield run(function*(arg) {
+      yield call(function(x) { return x + ' ok'; }, 'ook')
+      console.log('first run', arg);
+    }, 1);
+    console.log('after run');
+    yield run(function*(arg) {
+      yield call(function(x) { return x + ' ok'; }, 'ook')
+      console.log('second run', arg);
+    }, 1);
+
+    return 'hello';
+  });
+
+  console.log('done waiting', result);
+}
+
+function* go(): IterableIterator<any> {
+  yield defer(fork(run(go1)))
+  yield fork(run(go2))
+  yield fork(run(go3))
+  console.log('done with all');
+}
+
+runSaga(go);
+console.log('ran saga');
 
