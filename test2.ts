@@ -45,40 +45,51 @@ function execute(
 function recurse(
   generator: EffectsIterator, deferred: Array<Effect>, instruction
 ) {
-  // console.log('recurse', generator, deferred, instruction);
-  const { value: cmd, done } = instruction;
+  while (true) {
+    // console.log('recurse', generator, deferred, instruction);
+    const { value: cmd, done } = instruction;
 
-  if (done) {
-    if (deferred.length) {
-      deferred.reverse();
-      return execute(values(deferred), []).then(() => cmd);
-    } else {
-      return cmd;
-    }
-  }
-
-  switch (cmd.kind) {
-    case EffectType.RUN:
-      return execute((function* () {
-        const result = yield* cmd.saga(...cmd.args);
-        return yield join(execute(generator, deferred, result));
-      })(), deferred);
-    case EffectType.JOIN:
-      if (cmd.promise instanceof Promise) {
-        return cmd.promise.then(result => {
-          return execute(generator, deferred, result);
-        }).catch(err => {
-          const next = (generator as any).throw(err);
-          return recurse(generator, deferred, next);
-        });
+    if (done) {
+      if (deferred.length) {
+        deferred.reverse();
+        return execute(values(deferred), []).then(() => cmd);
+      } else {
+        return cmd;
       }
-      return execute(generator, deferred, cmd.promise);
-    case EffectType.DEFER:
-      deferred.push(cmd.effect);
-      return execute(generator, deferred);
-    default:
-      // NOTE: should this be generator.throw??
-      throw new Error('Yielded a non-effect');
+    }
+
+    switch (cmd.kind) {
+      case EffectType.RUN:
+        const old = generator;
+        generator = (function* () {
+          const result = yield* cmd.saga(...cmd.args);
+          return yield join(execute(old, deferred, result));
+        })();
+        instruction = generator.next();
+        break;
+      case EffectType.JOIN:
+        if (cmd.promise instanceof Promise) {
+          return new Promise((resolve) => {
+            resolve(
+              cmd.promise.then(result => {
+                return execute(generator, deferred, result);
+              }).catch(err => {
+                const next = (generator as any).throw(err);
+                return recurse(generator, deferred, next);
+              })
+            );
+          });
+        }
+        instruction = generator.next(cmd.promise);
+        break;
+      case EffectType.DEFER:
+        deferred.push(cmd.effect);
+        instruction = generator.next();
+        break;
+      default:
+        // NOTE: should this be generator.throw??
+        throw new Error('Yielded a non-effect');
+    }
   }
 }
 
